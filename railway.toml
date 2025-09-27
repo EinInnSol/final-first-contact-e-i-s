@@ -1,0 +1,51 @@
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+healthcheckPath = "/health"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+[environments.production]
+variables = { DEMO_MODE = "false", DEBUG = "false", LOG_LEVEL = "INFO" }
+
+[environments.staging]
+variables = { DEMO_MODE = "true", DEBUG = "true", LOG_LEVEL = "DEBUG" }
+
+# Service configurations
+[services.backend]
+source = "./backend"
+buildCommand = "pip install -r requirements.txt"
+startCommand = "uvicorn main:app --host 0.0.0.0 --port $PORT"
+healthcheckPath = "/health"
+port = 8000
+
+[services.client]
+source = "./frontend/client"
+buildCommand = "npm install && npm run build"
+startCommand = "npm start"
+port = 3000
+
+[services.caseworker]
+source = "./frontend/caseworker"
+buildCommand = "npm install && npm run build"
+startCommand = "npm start"
+port = 3001
+
+[services.city]
+source = "./frontend/city"
+buildCommand = "npm install && npm run build"
+startCommand = "npm start"
+port = 3002
+
+[services.kiosk]
+source = "./frontend/kiosk"
+buildCommand = "npm install && npm run build"
+startCommand = "npm start"
+port = 3003
+
+[services.admin]
+source = "./frontend/admin"
+buildCommand = "npm install && npm run build"
+startCommand = "npm start"
+port = 3004

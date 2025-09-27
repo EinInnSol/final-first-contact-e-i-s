@@ -1,0 +1,116 @@
+export const translations = {
+  en: {
+    // Navigation
+    'tabs.case_management': 'Case Management',
+    'tabs.clients': 'Clients',
+    'tabs.ai_assistant': 'AI Assistant',
+    'tabs.compliance': 'Compliance',
+    'tabs.performance': 'Performance',
+    'tabs.settings': 'Settings',
+    
+    // Dashboard
+    'dashboard.title': 'Caseworker Dashboard',
+    'dashboard.welcome_back': 'Welcome back',
+    
+    // Cases
+    'cases.title': 'Cases',
+    'cases.new_case': 'New Case',
+    'cases.updated': 'Case updated',
+    'cases.status.open': 'Open',
+    'cases.status.in_progress': 'In Progress',
+    'cases.status.completed': 'Completed',
+    'cases.status.closed': 'Closed',
+    'cases.priority.urgent': 'Urgent',
+    'cases.priority.high': 'High',
+    'cases.priority.medium': 'Medium',
+    'cases.priority.low': 'Low',
+    
+    // Crisis
+    'crisis.alert_detected': 'Crisis situation detected',
+    'crisis.resolved': 'Crisis resolved',
+    
+    // Notifications
+    'notifications.new_notification': 'New notification',
+    
+    // Settings
+    'settings.title': 'Settings',
+    'settings.coming_soon': 'Settings panel coming soon',
+    
+    // Features
+    'features.case_management.title': 'Case Management',
+    'features.case_management.description': 'Manage client cases with AI assistance',
+    'features.ai_assistance.title': 'AI Assistance',
+    'features.ai_assistance.description': 'Get intelligent recommendations and insights',
+    'features.compliance.title': 'Compliance',
+    'features.compliance.description': 'Automated HUD/HMIS reporting',
+    
+    // Welcome
+    'welcome.title': 'First Contact EIS',
+    'welcome.subtitle': 'AI-Powered Case Management System',
+    'welcome.get_started': 'Get Started',
+  },
+  es: {
+    'tabs.case_management': 'Gestión de Casos',
+    'tabs.clients': 'Clientes',
+    'tabs.ai_assistant': 'Asistente IA',
+    'tabs.compliance': 'Cumplimiento',
+    'tabs.performance': 'Rendimiento',
+    'tabs.settings': 'Configuración',
+    'dashboard.title': 'Panel de Trabajador Social',
+    'dashboard.welcome_back': 'Bienvenido de nuevo',
+    'cases.title': 'Casos',
+    'cases.new_case': 'Nuevo Caso',
+    'cases.updated': 'Caso actualizado',
+    'welcome.title': 'Sistema de Intervención Temprana',
+    'welcome.subtitle': 'Sistema de Gestión de Casos con IA',
+    'welcome.get_started': 'Comenzar',
+  },
+  km: {
+    'tabs.case_management': 'ការគ្រប់គ្រងករណី',
+    'tabs.clients': 'អតិថិជន',
+    'tabs.ai_assistant': 'ជំនួយការអាយ',
+    'tabs.compliance': 'ការអនុលោម',
+    'tabs.performance': 'ដំណើរការ',
+    'tabs.settings': 'ការកំណត់',
+    'dashboard.title': 'ផ្ទាំងគ្រប់គ្រងករណី',
+    'dashboard.welcome_back': 'សូមស្វាគមន៍',
+    'cases.title': 'ករណី',
+    'cases.new_case': 'ករណីថ្មី',
+    'cases.updated': 'ករណីត្រូវបានធ្វើបច្ចុប្បន្នភាព',
+    'welcome.title': 'ប្រព័ន្ធអន្តរាគមន៍ដំបូង',
+    'welcome.subtitle': 'ប្រព័ន្ធគ្រប់គ្រងករណីដោយអាយ',
+    'welcome.get_started': 'ចាប់ផ្តើម',
+  },
+  tl: {
+    'tabs.case_management': 'Pamahalaan ng Kaso',
+    'tabs.clients': 'Mga Kliyente',
+    'tabs.ai_assistant': 'AI Assistant',
+    'tabs.compliance': 'Pagsunod',
+    'tabs.performance': 'Pagganap',
+    'tabs.settings': 'Mga Setting',
+    'dashboard.title': 'Dashboard ng Caseworker',
+    'dashboard.welcome_back': 'Maligayang pagbabalik',
+    'cases.title': 'Mga Kaso',
+    'cases.new_case': 'Bagong Kaso',
+    'cases.updated': 'Na-update ang kaso',
+    'welcome.title': 'First Contact EIS',
+    'welcome.subtitle': 'AI-Powered Case Management System',
+    'welcome.get_started': 'Magsimula',
+  },
+  ko: {
+    'tabs.case_management': '사례 관리',
+    'tabs.clients': '클라이언트',
+    'tabs.ai_assistant': 'AI 어시스턴트',
+    'tabs.compliance': '컴플라이언스',
+    'tabs.performance': '성과',
+    'tabs.settings': '설정',
+    'dashboard.title': '케이스워커 대시보드',
+    'dashboard.welcome_back': '다시 오신 것을 환영합니다',
+    'cases.title': '사례',
+    'cases.new_case': '새 사례',
+    'cases.updated': '사례가 업데이트됨',
+    'welcome.title': '퍼스트 컨택트 EIS',
+    'welcome.subtitle': 'AI 기반 사례 관리 시스템',
+    'welcome.get_started': '시작하기',
+  },
+};
