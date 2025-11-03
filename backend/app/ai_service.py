@@ -180,7 +180,7 @@ class AIService:
     
     def __init__(self):
         self.gcp_project_id = os.getenv("GCP_PROJECT_ID", "einharjer-valhalla")
-        self.gcp_region = os.getenv("GCP_REGION", "us-west1")
+        self.gcp_region = os.getenv("GCP_REGION", "us-east5")  # Claude 4.5 available in us-east5 or europe-west4
         self.timeout = int(os.getenv("AI_SERVICE_TIMEOUT", "30"))
         self.max_retries = int(os.getenv("AI_MAX_RETRIES", "3"))
         self.vertex_client = None

@@ -14,9 +14,9 @@ NC='\033[0m' # No Color
 
 # Configuration
 PROJECT_ID="einharjer-valhalla"
-REGION="us-west1"
+REGION="us-east5"  # Claude 4.5 Sonnet on Vertex AI is only available in us-east5 or europe-west4
 REGISTRY="first-contact-eis"
-REGISTRY_URL="us-west1-docker.pkg.dev/${PROJECT_ID}/${REGISTRY}"
+REGISTRY_URL="us-east5-docker.pkg.dev/${PROJECT_ID}/${REGISTRY}"
 
 echo -e "${BLUE}🚀 First Contact EIS - GCP Deployment${NC}"
 echo -e "${BLUE}==========================================${NC}\n"
@@ -38,7 +38,7 @@ echo -e "${GREEN}✅ Project verified: $PROJECT_ID${NC}\n"
 
 # Authenticate Docker
 echo -e "${YELLOW}🔐 Authenticating Docker with Artifact Registry...${NC}"
-gcloud auth configure-docker us-west1-docker.pkg.dev --quiet
+gcloud auth configure-docker us-east5-docker.pkg.dev --quiet
 echo -e "${GREEN}✅ Docker authenticated${NC}\n"
 
 # Function to build and push image

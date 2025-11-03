@@ -12,6 +12,13 @@
 - ✅ Google Cloud SDK (`gcloud`) installed and configured
 - ✅ Docker installed locally (for building images)
 
+> **⚠️ IMPORTANT: Region Selection**
+> 
+> This deployment uses **us-east5** (Columbus, Ohio) because:
+> - Claude 4.5 Sonnet on Vertex AI is **only available** in: `us-east5`, `europe-west4`, or `GLOBAL` endpoint
+> - Using other regions (like us-west, us-central) will result in "model not found" errors
+> - All services must be in the same region for optimal latency and cost
+
 ---
 
 ## 🏗️ Architecture Overview
@@ -74,11 +81,11 @@ gcloud services enable \
 # Create Docker repository
 gcloud artifacts repositories create first-contact-eis \
     --repository-format=docker \
-    --location=us-west1 \
+    --location=us-east5 \
     --description="First Contact EIS Docker images"
 
 # Configure Docker to use Artifact Registry
-gcloud auth configure-docker us-west1-docker.pkg.dev
+gcloud auth configure-docker us-east5-docker.pkg.dev
 ```
 
 ---
@@ -90,7 +97,7 @@ gcloud auth configure-docker us-west1-docker.pkg.dev
 gcloud sql instances create firstcontact-db \
     --database-version=POSTGRES_15 \
     --tier=db-f1-micro \
-    --region=us-west1 \
+    --region=us-east5 \
     --root-password=CHANGE_ME_SECURE_PASSWORD \
     --availability-type=zonal \
     --storage-type=SSD \
@@ -110,7 +117,7 @@ gcloud sql users create firstcontact \
 # Get connection name (save this!)
 gcloud sql instances describe firstcontact-db \
     --format="value(connectionName)"
-# Output: einharjer-valhalla:us-west1:firstcontact-db
+# Output: einharjer-valhalla:us-east5:firstcontact-db
 ```
 
 ---
@@ -121,13 +128,13 @@ gcloud sql instances describe firstcontact-db \
 # Create Redis instance (this takes ~5 minutes)
 gcloud redis instances create firstcontact-cache \
     --size=1 \
-    --region=us-west1 \
+    --region=us-east5 \
     --redis-version=redis_7_0 \
     --tier=basic
 
 # Get Redis host (save this!)
 gcloud redis instances describe firstcontact-cache \
-    --region=us-west1 \
+    --region=us-east5 \
     --format="value(host)"
 ```
 
@@ -138,7 +145,7 @@ gcloud redis instances describe firstcontact-cache \
 ```bash
 # Create VPC connector
 gcloud compute networks vpc-access connectors create firstcontact-connector \
-    --region=us-west1 \
+    --region=us-east5 \
     --network=default \
     --range=10.8.0.0/28
 ```
@@ -153,10 +160,10 @@ gcloud compute networks vpc-access connectors create firstcontact-connector \
 cd backend
 
 # Build Docker image
-docker build -t us-west1-docker.pkg.dev/einharjer-valhalla/first-contact-eis/backend:latest .
+docker build -t us-east5-docker.pkg.dev/einharjer-valhalla/first-contact-eis/backend:latest .
 
 # Push to Artifact Registry
-docker push us-west1-docker.pkg.dev/einharjer-valhalla/first-contact-eis/backend:latest
+docker push us-east5-docker.pkg.dev/einharjer-valhalla/first-contact-eis/backend:latest
 
 cd ..
 ```
@@ -166,26 +173,26 @@ cd ..
 ```bash
 # Client Portal
 cd frontend/client
-docker build -t us-west1-docker.pkg.dev/einharjer-valhalla/first-contact-eis/client:latest .
-docker push us-west1-docker.pkg.dev/einharjer-valhalla/first-contact-eis/client:latest
+docker build -t us-east5-docker.pkg.dev/einharjer-valhalla/first-contact-eis/client:latest .
+docker push us-east5-docker.pkg.dev/einharjer-valhalla/first-contact-eis/client:latest
 cd ../..
 
 # Caseworker Dashboard
 cd frontend/caseworker
-docker build -t us-west1-docker.pkg.dev/einharjer-valhalla/first-contact-eis/caseworker:latest .
-docker push us-west1-docker.pkg.dev/einharjer-valhalla/first-contact-eis/caseworker:latest
+docker build -t us-east5-docker.pkg.dev/einharjer-valhalla/first-contact-eis/caseworker:latest .
+docker push us-east5-docker.pkg.dev/einharjer-valhalla/first-contact-eis/caseworker:latest
 cd ../..
 
 # City Analytics
 cd frontend/city
-docker build -t us-west1-docker.pkg.dev/einharjer-valhalla/first-contact-eis/city:latest .
-docker push us-west1-docker.pkg.dev/einharjer-valhalla/first-contact-eis/city:latest
+docker build -t us-east5-docker.pkg.dev/einharjer-valhalla/first-contact-eis/city:latest .
+docker push us-east5-docker.pkg.dev/einharjer-valhalla/first-contact-eis/city:latest
 cd ../..
 
 # Admin Dashboard
 cd frontend/admin
-docker build -t us-west1-docker.pkg.dev/einharjer-valhalla/first-contact-eis/admin:latest .
-docker push us-west1-docker.pkg.dev/einharjer-valhalla/first-contact-eis/admin:latest
+docker build -t us-east5-docker.pkg.dev/einharjer-valhalla/first-contact-eis/admin:latest .
+docker push us-east5-docker.pkg.dev/einharjer-valhalla/first-contact-eis/admin:latest
 cd ../..
 ```
 
@@ -197,8 +204,8 @@ cd ../..
 
 ```bash
 gcloud run deploy backend-api \
-    --image=us-west1-docker.pkg.dev/einharjer-valhalla/first-contact-eis/backend:latest \
-    --region=us-west1 \
+    --image=us-east5-docker.pkg.dev/einharjer-valhalla/first-contact-eis/backend:latest \
+    --region=us-east5 \
     --platform=managed \
     --allow-unauthenticated \
     --port=8000 \
@@ -207,13 +214,13 @@ gcloud run deploy backend-api \
     --memory=2Gi \
     --cpu=2 \
     --vpc-connector=firstcontact-connector \
-    --set-env-vars="GCP_PROJECT_ID=einharjer-valhalla,GCP_REGION=us-west1,DEMO_MODE=false" \
+    --set-env-vars="GCP_PROJECT_ID=einharjer-valhalla,GCP_REGION=us-east5,DEMO_MODE=false" \
     --set-secrets="DATABASE_URL=DATABASE_URL:latest,REDIS_URL=REDIS_URL:latest,SECRET_KEY=SECRET_KEY:latest" \
-    --add-cloudsql-instances=einharjer-valhalla:us-west1:firstcontact-db
+    --add-cloudsql-instances=einharjer-valhalla:us-east5:firstcontact-db
 
 # Get backend URL (save this for frontend)
 gcloud run services describe backend-api \
-    --region=us-west1 \
+    --region=us-east5 \
     --format="value(status.url)"
 ```
 
@@ -221,12 +228,12 @@ gcloud run services describe backend-api \
 
 ```bash
 # Get the backend API URL from above
-BACKEND_URL=$(gcloud run services describe backend-api --region=us-west1 --format="value(status.url)")
+BACKEND_URL=$(gcloud run services describe backend-api --region=us-east5 --format="value(status.url)")
 
 # Client Portal
 gcloud run deploy client-portal \
-    --image=us-west1-docker.pkg.dev/einharjer-valhalla/first-contact-eis/client:latest \
-    --region=us-west1 \
+    --image=us-east5-docker.pkg.dev/einharjer-valhalla/first-contact-eis/client:latest \
+    --region=us-east5 \
     --platform=managed \
     --allow-unauthenticated \
     --port=3000 \
@@ -235,8 +242,8 @@ gcloud run deploy client-portal \
 
 # Caseworker Dashboard
 gcloud run deploy caseworker-dashboard \
-    --image=us-west1-docker.pkg.dev/einharjer-valhalla/first-contact-eis/caseworker:latest \
-    --region=us-west1 \
+    --image=us-east5-docker.pkg.dev/einharjer-valhalla/first-contact-eis/caseworker:latest \
+    --region=us-east5 \
     --platform=managed \
     --allow-unauthenticated \
     --port=3001 \
@@ -245,8 +252,8 @@ gcloud run deploy caseworker-dashboard \
 
 # City Analytics
 gcloud run deploy city-analytics \
-    --image=us-west1-docker.pkg.dev/einharjer-valhalla/first-contact-eis/city:latest \
-    --region=us-west1 \
+    --image=us-east5-docker.pkg.dev/einharjer-valhalla/first-contact-eis/city:latest \
+    --region=us-east5 \
     --platform=managed \
     --allow-unauthenticated \
     --port=3002 \
@@ -255,8 +262,8 @@ gcloud run deploy city-analytics \
 
 # Admin Dashboard
 gcloud run deploy admin-dashboard \
-    --image=us-west1-docker.pkg.dev/einharjer-valhalla/first-contact-eis/admin:latest \
-    --region=us-west1 \
+    --image=us-east5-docker.pkg.dev/einharjer-valhalla/first-contact-eis/admin:latest \
+    --region=us-east5 \
     --platform=managed \
     --allow-unauthenticated \
     --port=3004 \
@@ -270,7 +277,7 @@ gcloud run deploy admin-dashboard \
 
 ```bash
 # Create secrets (replace with actual values)
-echo -n "postgresql://firstcontact:PASSWORD@/firstcontact_eis?host=/cloudsql/einharjer-valhalla:us-west1:firstcontact-db" | \
+echo -n "postgresql://firstcontact:PASSWORD@/firstcontact_eis?host=/cloudsql/einharjer-valhalla:us-east5:firstcontact-db" | \
     gcloud secrets create DATABASE_URL --data-file=-
 
 echo -n "redis://REDIS_HOST:6379" | \
@@ -324,17 +331,17 @@ gcloud compute ssl-certificates create einharjer-cert \
 gcloud beta run domain-mappings create \
     --service=client-portal \
     --domain=einharjer.com \
-    --region=us-west1
+    --region=us-east5
 
 gcloud beta run domain-mappings create \
     --service=backend-api \
     --domain=api.einharjer.com \
-    --region=us-west1
+    --region=us-east5
 
 gcloud beta run domain-mappings create \
     --service=caseworker-dashboard \
     --domain=staff.einharjer.com \
-    --region=us-west1
+    --region=us-east5
 
 # Update DNS records as instructed by the output
 ```
@@ -345,7 +352,7 @@ gcloud beta run domain-mappings create \
 
 ```bash
 # Connect to Cloud SQL via proxy
-cloud_sql_proxy -instances=einharjer-valhalla:us-west1:firstcontact-db=tcp:5432 &
+cloud_sql_proxy -instances=einharjer-valhalla:us-east5:firstcontact-db=tcp:5432 &
 
 # Run Alembic migrations
 cd backend
@@ -361,22 +368,22 @@ cd ..
 ```bash
 # Get service URLs
 echo "Backend API:"
-gcloud run services describe backend-api --region=us-west1 --format="value(status.url)"
+gcloud run services describe backend-api --region=us-east5 --format="value(status.url)"
 
 echo "Client Portal:"
-gcloud run services describe client-portal --region=us-west1 --format="value(status.url)"
+gcloud run services describe client-portal --region=us-east5 --format="value(status.url)"
 
 echo "Caseworker Dashboard:"
-gcloud run services describe caseworker-dashboard --region=us-west1 --format="value(status.url)"
+gcloud run services describe caseworker-dashboard --region=us-east5 --format="value(status.url)"
 
 echo "City Analytics:"
-gcloud run services describe city-analytics --region=us-west1 --format="value(status.url)"
+gcloud run services describe city-analytics --region=us-east5 --format="value(status.url)"
 
 echo "Admin Dashboard:"
-gcloud run services describe admin-dashboard --region=us-west1 --format="value(status.url)"
+gcloud run services describe admin-dashboard --region=us-east5 --format="value(status.url)"
 
 # Test backend health
-BACKEND_URL=$(gcloud run services describe backend-api --region=us-west1 --format="value(status.url)")
+BACKEND_URL=$(gcloud run services describe backend-api --region=us-east5 --format="value(status.url)")
 curl ${BACKEND_URL}/health
 curl ${BACKEND_URL}/api/ai/health
 ```
@@ -387,8 +394,8 @@ curl ${BACKEND_URL}/api/ai/health
 
 ```bash
 # View logs
-gcloud run services logs read backend-api --region=us-west1
-gcloud run services logs read client-portal --region=us-west1
+gcloud run services logs read backend-api --region=us-east5
+gcloud run services logs read client-portal --region=us-east5
 
 # Open Cloud Console monitoring
 echo "Monitoring: https://console.cloud.google.com/monitoring"
@@ -449,3 +456,4 @@ echo "Cloud Run: https://console.cloud.google.com/run"
 ---
 
 **Built with ❤️ for Long Beach's vulnerable populations**
+
