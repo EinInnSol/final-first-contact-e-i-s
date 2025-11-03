@@ -176,74 +176,68 @@ Would you like me to help you get started with any of these services? I can conn
         }
 
 class AIService:
-    """AI service for handling real API calls"""
+    """AI service for handling Vertex AI calls"""
     
     def __init__(self):
-        self.openai_api_key = os.getenv("OPENAI_API_KEY")
-        self.anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
+        self.gcp_project_id = os.getenv("GCP_PROJECT_ID", "einharjer-valhalla")
+        self.gcp_region = os.getenv("GCP_REGION", "us-west1")
         self.timeout = int(os.getenv("AI_SERVICE_TIMEOUT", "30"))
         self.max_retries = int(os.getenv("AI_MAX_RETRIES", "3"))
+        self.vertex_client = None
+        
+        # Initialize Vertex AI client if not in demo mode
+        if not DEMO_MODE:
+            try:
+                from anthropic import AnthropicVertex
+                self.vertex_client = AnthropicVertex(
+                    project_id=self.gcp_project_id,
+                    region=self.gcp_region
+                )
+                logger.info(f"Vertex AI Claude client initialized for project {self.gcp_project_id}, region {self.gcp_region}")
+            except Exception as e:
+                logger.error(f"Failed to initialize Vertex AI client: {e}")
+                logger.warning("Falling back to demo mode")
     
     async def get_ai_response(self, query: str, context: Dict[str, Any] = None) -> str:
-        """Get AI response from OpenAI or Anthropic"""
-        if not self.openai_api_key and not self.anthropic_api_key:
+        """Get AI response from Vertex AI Claude"""
+        if not self.vertex_client:
             return DemoModeService.get_mock_ai_response(query, context)
         
-        # Try OpenAI first
-        if self.openai_api_key:
-            try:
-                return await self._call_openai(query, context)
-            except Exception as e:
-                logger.error(f"OpenAI API error: {e}")
-        
-        # Fallback to Anthropic
-        if self.anthropic_api_key:
-            try:
-                return await self._call_anthropic(query, context)
-            except Exception as e:
-                logger.error(f"Anthropic API error: {e}")
-        
-        # Fallback to demo mode
-        return DemoModeService.get_mock_ai_response(query, context)
+        try:
+            return await self._call_vertex_ai(query, context)
+        except Exception as e:
+            logger.error(f"Vertex AI API error: {e}")
+            # Fallback to demo mode on error
+            return DemoModeService.get_mock_ai_response(query, context)
     
-    async def _call_openai(self, query: str, context: Dict[str, Any] = None) -> str:
-        """Call OpenAI API"""
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
-            response = await client.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers={"Authorization": f"Bearer {self.openai_api_key}"},
-                json={
-                    "model": "gpt-4",
-                    "messages": [
-                        {"role": "system", "content": "You are an AI assistant for a civic services early intervention system. Help clients with housing, employment, healthcare, and other social services."},
+    async def _call_vertex_ai(self, query: str, context: Dict[str, Any] = None) -> str:
+        """Call Vertex AI Claude API"""
+        try:
+            # Construct system message based on context
+            system_message = "You are an AI assistant for a civic services early intervention system. Help clients with housing, employment, healthcare, and other social services."
+            
+            if context:
+                system_message += f"\n\nContext: {json.dumps(context)}"
+            
+            # Vertex AI Claude call (synchronous, run in thread pool)
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None,
+                lambda: self.vertex_client.messages.create(
+                    model="claude-sonnet-4-5@20250929",  # Latest Claude model on Vertex
+                    max_tokens=1024,
+                    system=system_message,
+                    messages=[
                         {"role": "user", "content": query}
-                    ],
-                    "max_tokens": 1000,
-                    "temperature": 0.7
-                }
+                    ]
+                )
             )
-            response.raise_for_status()
-            data = response.json()
-            return data["choices"][0]["message"]["content"]
-    
-    async def _call_anthropic(self, query: str, context: Dict[str, Any] = None) -> str:
-        """Call Anthropic API"""
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
-            response = await client.post(
-                "https://api.anthropic.com/v1/messages",
-                headers={
-                    "x-api-key": self.anthropic_api_key,
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "model": "claude-3-sonnet-20240229",
-                    "max_tokens": 1000,
-                    "messages": [{"role": "user", "content": query}]
-                }
-            )
-            response.raise_for_status()
-            data = response.json()
-            return data["content"][0]["text"]
+            
+            # Extract text from response
+            return response.content[0].text
+        except Exception as e:
+            logger.error(f"Vertex AI call failed: {e}")
+            raise
 
 # Initialize AI service
 ai_service = AIService()
@@ -441,8 +435,9 @@ async def ai_health_check():
     return {
         "status": "healthy",
         "demo_mode": DemoModeService.is_demo_mode(),
-        "services": {
-            "openai": bool(os.getenv("OPENAI_API_KEY")),
-            "anthropic": bool(os.getenv("ANTHROPIC_API_KEY"))
+        "vertex_ai": {
+            "enabled": ai_service.vertex_client is not None,
+            "project_id": ai_service.gcp_project_id,
+            "region": ai_service.gcp_region
         }
     }
