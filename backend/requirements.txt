@@ -42,11 +42,7 @@ nltk==3.8.1
 
 # Advanced AI and ML for cross-system learning
 plotly==5.17.0
-d3==7.8.5
-d3-scale==4.0.2
-d3-array==3.2.4
-d3-time==3.1.0
-d3-time-format==4.1.0
+# D3.js dependencies removed - JavaScript library, not Python
 
 # HTTP client
 aiohttp==3.9.1
