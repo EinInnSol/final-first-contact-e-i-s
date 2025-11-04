@@ -348,6 +348,7 @@ class MutualSupportPair(Base):
     __tablename__ = "mutual_support_pairs"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False)
     
     # The pair
     client_a_id = Column(UUID(as_uuid=True), ForeignKey("clients.id"), nullable=False)
@@ -371,6 +372,7 @@ class MutualSupportPair(Base):
     traditional_cost = Column(Float, default=90000.0)  # $90K for 2 separate cases
     paired_cost = Column(Float, default=42000.0)  # $42K for 1 consolidated pair
     estimated_savings = Column(Float, default=48000.0)  # $48K savings
+    cost_savings_estimate = Column(Float, default=48000.0)  # Alias for estimated_savings (API compatibility)
     
     # Caseworker review
     caseworker_reviewed = Column(Boolean, default=False)
@@ -380,13 +382,14 @@ class MutualSupportPair(Base):
     reviewed_at = Column(DateTime)
     
     # Status
-    status = Column(String(50), default="detected")  # detected, reviewed, approved, formalized, rejected
+    status = Column(String(50), default="detected")  # detected, reviewed, approved, formalized, rejected, pending_review
     
     # Metadata
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
+    organization = relationship("Organization")
     client_a = relationship("Client", foreign_keys=[client_a_id], back_populates="mutual_support_pairs_a")
     client_b = relationship("Client", foreign_keys=[client_b_id], back_populates="mutual_support_pairs_b")
     reviewed_by = relationship("User", foreign_keys=[reviewed_by_id])
@@ -465,3 +468,39 @@ class AuditLog(Base):
     
     # Relationships
     user = relationship("User")
+
+
+# ============================================================================
+# MUTUAL SUPPORT ALERTS (Specialized alerts for pair detection)
+# ============================================================================
+
+class MutualSupportAlert(Base):
+    """
+    Specialized alerts for mutual support pair detection
+    Sent to caseworkers for review and action
+    """
+    __tablename__ = "mutual_support_alerts"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False)
+    pair_id = Column(UUID(as_uuid=True), ForeignKey("mutual_support_pairs.id"), nullable=False)
+    
+    # Alert details
+    alert_type = Column(String(50), default="mutual_support_detected")
+    severity = Column(String(20), default="medium")  # low, medium, high, critical
+    message = Column(Text, nullable=False)
+    recommended_actions = Column(JSON)  # Array of action strings
+    
+    # Status
+    status = Column(String(20), default="unread")  # unread, read, dismissed
+    read_at = Column(DateTime)
+    dismissed_at = Column(DateTime)
+    
+    # Metadata
+    metadata = Column(JSON)  # Additional context (confidence score, cost savings, etc.)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    organization = relationship("Organization")
+    mutual_support_pair = relationship("MutualSupportPair")

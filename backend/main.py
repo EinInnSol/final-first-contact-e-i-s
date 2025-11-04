@@ -141,6 +141,9 @@ async def root():
     }
 
 # Include routers
+from app.routes import api_router  # NEW: Our core business logic routes
+
+app.include_router(api_router)  # Includes intake, alerts, analytics
 app.include_router(health_check_router, prefix="/api/v1", tags=["Health"])
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(ai_router, prefix="/api/v1/ai", tags=["AI Services"])

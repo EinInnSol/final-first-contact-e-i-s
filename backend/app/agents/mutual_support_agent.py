@@ -398,3 +398,92 @@ if __name__ == "__main__":
         print(f"IHSS Eligible: {alert['ihss_eligible']}")
         print(f"Priority: {alert['priority']}")
         print(f"\nMessage: {alert['message']}\n")
+    
+    async def evaluate_intake(self, intake_record: Dict, db) -> Dict:
+        """
+        Evaluate a new intake for potential mutual support relationships.
+        
+        This is the async method called by the intake router.
+        It searches the database for other clients in the same organization
+        who might have an existing support relationship with this person.
+        
+        Args:
+            intake_record: New intake data
+            db: AsyncSession for database queries
+            
+        Returns:
+            Dict with pairs_detected count and detected_pairs list
+        """
+        from sqlalchemy import select, and_
+        from app.models import Client, Intake as IntakeModel
+        
+        detected_pairs = []
+        organization_id = intake_record.get('organization_id')
+        
+        if not organization_id:
+            logger.warning("No organization_id in intake record, cannot evaluate")
+            return {'pairs_detected': 0, 'detected_pairs': []}
+        
+        # Get all other clients in the same organization
+        query = select(Client).where(
+            and_(
+                Client.organization_id == organization_id,
+                Client.id != intake_record.get('client_id')
+            )
+        )
+        
+        result = await db.execute(query)
+        potential_matches = result.scalars().all()
+        
+        logger.info(f"Evaluating intake {intake_record.get('id')} against {len(potential_matches)} potential matches")
+        
+        # Check each potential match
+        for client_b in potential_matches:
+            # Get most recent intake for client B
+            intake_query = select(IntakeModel).where(
+                IntakeModel.client_id == client_b.id
+            ).order_by(IntakeModel.created_at.desc()).limit(1)
+            
+            intake_result = await db.execute(intake_query)
+            client_b_intake = intake_result.scalar_one_or_none()
+            
+            if not client_b_intake:
+                continue
+            
+            # Convert to dict format for evaluation
+            client_b_record = {
+                'id': str(client_b.id),
+                'first_name': client_b.first_name,
+                'last_name': client_b.last_name,
+                'housing_status': client_b_intake.housing_status,
+                'support_network': client_b_intake.support_network or {},
+                'medical_conditions': client_b_intake.medical_conditions or [],
+            }
+            
+            # Evaluate pair
+            pair = self.evaluate_client_pair(intake_record, client_b_record)
+            
+            if pair:
+                # Calculate financial benefits
+                ihss_monthly = 1800.0 if pair.ihss_eligible else 0.0
+                annual_savings = pair.consolidation_benefits.get('estimated_cost_savings', {}).get('over_6_months', 0) * 2
+                
+                detected_pairs.append({
+                    'client_b_id': str(client_b.id),
+                    'client_b_name': f"{client_b.first_name} {client_b.last_name}",
+                    'confidence_score': pair.confidence_score,
+                    'ihss_eligible': pair.ihss_eligible,
+                    'indicators': [ind.indicator_type for ind in pair.support_indicators],
+                    'estimated_monthly_benefit': ihss_monthly,
+                    'estimated_annual_savings': annual_savings
+                })
+                
+                logger.info(
+                    f"🎯 PAIR DETECTED: {intake_record.get('first_name')} + {client_b.first_name} "
+                    f"(confidence: {pair.confidence_score:.0%})"
+                )
+        
+        return {
+            'pairs_detected': len(detected_pairs),
+            'detected_pairs': detected_pairs
+        }
