@@ -1,33 +1,50 @@
 """
-Pydantic schemas for First Contact EIS
+Pydantic schemas for First Contact EIS API
+Request/response models with validation
 """
 
-from datetime import datetime, date
-from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, EmailStr, Field, validator
+from typing import Optional, List, Dict, Any
+from datetime import datetime, date
+from uuid import UUID
 from enum import Enum
 
-# Enums
-class UserRole(str, Enum):
+# ============================================================================
+# ENUMS (Match SQLAlchemy models)
+# ============================================================================
+
+class UserRoleEnum(str, Enum):
     ADMIN = "admin"
     CASEWORKER = "caseworker"
-    SUPERVISOR = "supervisor"
     ANALYST = "analyst"
     CLIENT = "client"
 
-class CaseStatus(str, Enum):
+class CaseStatusEnum(str, Enum):
     OPEN = "open"
     IN_PROGRESS = "in_progress"
+    PAIRED = "paired"
+    HOUSED = "housed"
     CLOSED = "closed"
     ESCALATED = "escalated"
 
-class CrisisLevel(str, Enum):
+class CrisisLevelEnum(str, Enum):
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
     CRITICAL = "critical"
 
-class ServiceType(str, Enum):
+class LocationTypeEnum(str, Enum):
+    KIOSK = "kiosk"
+    BENCH = "bench"
+    BUS_STOP = "bus_stop"
+    SHELTER = "shelter"
+    LIBRARY = "library"
+    COMMUNITY_CENTER = "community_center"
+    PARK = "park"
+    MOBILE_UNIT = "mobile_unit"
+    OTHER = "other"
+
+class ServiceTypeEnum(str, Enum):
     HOUSING = "housing"
     EMPLOYMENT = "employment"
     HEALTHCARE = "healthcare"
@@ -39,410 +56,241 @@ class ServiceType(str, Enum):
     LEGAL = "legal"
     FINANCIAL = "financial"
 
-class LanguageCode(str, Enum):
-    EN = "en"
-    ES = "es"
-    KM = "km"
-    TL = "tl"
-    KO = "ko"
+# ============================================================================
+# LOCATION SCHEMAS (Geospatial + QR Codes)
+# ============================================================================
 
-# Base schemas
-class BaseSchema(BaseModel):
+class LocationCreate(BaseModel):
+    """Create new QR code location"""
+    location_code: str = Field(..., description="Unique code like LB_MLK_042")
+    display_name: str = Field(..., description="Human-readable name")
+    location_type: LocationTypeEnum
+    address: Optional[str] = None
+    city: Optional[str] = "Long Beach"
+    state: Optional[str] = "CA"
+    zip_code: Optional[str] = None
+    latitude: Optional[float] = Field(None, ge=-90, le=90)
+    longitude: Optional[float] = Field(None, ge=-180, le=180)
+    expected_monthly_scans: Optional[int] = Field(0, ge=0)
+    notes: Optional[str] = None
+
+class LocationResponse(BaseModel):
+    """Location data returned to API consumers"""
+    id: UUID
+    organization_id: UUID
+    location_code: str
+    display_name: str
+    location_type: LocationTypeEnum
+    address: Optional[str]
+    city: Optional[str]
+    state: Optional[str]
+    zip_code: Optional[str]
+    latitude: Optional[float]
+    longitude: Optional[float]
+    qr_code_url: Optional[str]
+    is_active: bool
+    actual_monthly_scans: int = 0
+    created_at: datetime
+    
     class Config:
         from_attributes = True
-        use_enum_values = True
 
-# Health check schemas
-class ServiceStatus(BaseModel):
-    status: str
-    response_time_ms: float
-    error: Optional[str] = None
+class LocationAnalytics(BaseModel):
+    """Analytics for a specific location"""
+    location: LocationResponse
+    total_intakes: int
+    intakes_this_month: int
+    mutual_support_pairs_detected: int
+    mutual_support_rate: float  # Percentage
+    top_services_requested: List[Dict[str, Any]]
+    peak_times: List[str]  # ["7-9am", "5-7pm"]
+    avg_crisis_level: str
+    ai_recommendations: List[str]
 
-class HealthResponse(BaseModel):
-    status: str
-    version: str
-    timestamp: str
-    response_time_ms: Optional[float] = None
-    services: Dict[str, ServiceStatus]
+# ============================================================================
+# INTAKE SCHEMAS
+# ============================================================================
 
-# User schemas
-class UserBase(BaseSchema):
-    email: EmailStr
-    username: str
-    first_name: str
-    last_name: str
-    role: UserRole
-    is_active: bool = True
-
-class UserCreate(UserBase):
-    password: str = Field(..., min_length=8)
-
-class UserUpdate(BaseSchema):
-    email: Optional[EmailStr] = None
-    username: Optional[str] = None
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    role: Optional[UserRole] = None
-    is_active: Optional[bool] = None
-
-class User(UserBase):
-    id: str
-    is_verified: bool
-    last_login: Optional[datetime]
-    created_at: datetime
-    updated_at: datetime
-
-class UserLogin(BaseSchema):
-    username: str
-    password: str
-
-class Token(BaseSchema):
-    access_token: str
-    token_type: str
-    expires_in: int
-
-class TokenData(BaseSchema):
-    username: Optional[str] = None
-
-# Client schemas
-class ClientBase(BaseSchema):
-    first_name: str
-    last_name: str
+class IntakeRequest(BaseModel):
+    """Client intake form submission"""
+    # Location context (from QR code)
+    location_code: str = Field(..., description="QR code location identifier")
+    
+    # Personal info
+    first_name: str = Field(..., min_length=1, max_length=100)
+    last_name: str = Field(..., min_length=1, max_length=100)
     date_of_birth: Optional[date] = None
-    phone: Optional[str] = None
+    phone: Optional[str] = Field(None, max_length=20)
     email: Optional[EmailStr] = None
     address: Optional[str] = None
-    city: Optional[str] = None
-    state: Optional[str] = None
+    city: Optional[str] = "Long Beach"
+    state: Optional[str] = "CA"
     zip_code: Optional[str] = None
-    emergency_contact_name: Optional[str] = None
-    emergency_contact_phone: Optional[str] = None
-    emergency_contact_relationship: Optional[str] = None
-    preferred_language: LanguageCode = LanguageCode.EN
-    is_homeless: bool = False
-    is_veteran: bool = False
-    is_domestic_violence_survivor: bool = False
-    has_children: bool = False
-    number_of_children: int = 0
+    
+    # Demographics (HUD Universal Data Elements)
+    gender: Optional[str] = None
+    race: Optional[List[str]] = None
+    ethnicity: Optional[str] = None
+    veteran_status: Optional[bool] = False
+    
+    # Mutual Support indicators (THE INNOVATION!)
+    living_with_someone: bool = False
+    provides_care_to_someone: bool = False
+    receives_care_from_someone: bool = False
+    shared_residence: bool = False
+    assists_with_daily_activities: bool = False
+    daily_care_hours: Optional[int] = Field(0, ge=0, le=24)
+    
+    # Service needs
+    services_requested: Optional[List[ServiceTypeEnum]] = []
+    crisis_level: Optional[CrisisLevelEnum] = CrisisLevelEnum.MEDIUM
+    notes: Optional[str] = Field(None, max_length=2000)
+    
+    @validator('phone')
+    def validate_phone(cls, v):
+        if v:
+            # Remove common separators
+            cleaned = v.replace('-', '').replace('(', '').replace(')', '').replace(' ', '')
+            if not cleaned.isdigit() or len(cleaned) < 10:
+                raise ValueError('Phone must be at least 10 digits')
+        return v
 
-class ClientCreate(ClientBase):
-    pass
+class IntakeResponse(BaseModel):
+    """Response after intake submission"""
+    client_id: UUID
+    intake_id: UUID
+    case_id: UUID
+    status: str = "success"
+    message: str
+    
+    # Mutual Support detection results
+    mutual_support_detected: bool = False
+    mutual_support_confidence: Optional[float] = None
+    estimated_savings: Optional[float] = None
+    
+    # Location context
+    location_name: Optional[str] = None
+    next_steps: List[str] = []
 
-class ClientUpdate(BaseSchema):
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    date_of_birth: Optional[date] = None
-    phone: Optional[str] = None
-    email: Optional[EmailStr] = None
-    address: Optional[str] = None
-    city: Optional[str] = None
-    state: Optional[str] = None
-    zip_code: Optional[str] = None
-    emergency_contact_name: Optional[str] = None
-    emergency_contact_phone: Optional[str] = None
-    emergency_contact_relationship: Optional[str] = None
-    preferred_language: Optional[LanguageCode] = None
-    is_homeless: Optional[bool] = None
-    is_veteran: Optional[bool] = None
-    is_domestic_violence_survivor: Optional[bool] = None
-    has_children: Optional[bool] = None
-    number_of_children: Optional[int] = None
+# ============================================================================
+# MUTUAL SUPPORT PAIR SCHEMAS
+# ============================================================================
 
-class Client(ClientBase):
-    id: str
-    user_id: Optional[str] = None
-    created_at: datetime
-    updated_at: datetime
+class MutualSupportPairResponse(BaseModel):
+    """Mutual support pair details"""
+    id: UUID
+    client_a_id: UUID
+    client_a_name: str
+    client_b_id: UUID
+    client_b_name: str
+    confidence_score: float
+    support_indicators: List[str]
+    ihss_eligible: bool
+    estimated_savings: float
+    status: str
+    detected_at: datetime
+    caseworker_reviewed: bool
+    
+    class Config:
+        from_attributes = True
 
-# Case schemas
-class CaseBase(BaseSchema):
-    title: str
-    description: Optional[str] = None
-    status: CaseStatus = CaseStatus.OPEN
-    priority: CrisisLevel = CrisisLevel.LOW
-    crisis_indicators: Optional[List[str]] = None
-    services_needed: Optional[List[ServiceType]] = None
-    notes: Optional[str] = None
+class MutualSupportEvaluation(BaseModel):
+    """Evaluation result from Mutual Support Agent"""
+    status: str  # "mutual_support_detected" or "no_alert"
+    score: float
+    client_id: Optional[UUID] = None
+    support_indicators: List[str] = []
+    ihss_eligible: bool = False
+    estimated_savings: Optional[float] = None
+    action: str  # "notify_caseworker" or "none"
 
-class CaseCreate(CaseBase):
-    client_id: str
-    assigned_user_id: Optional[str] = None
+# ============================================================================
+# CASEWORKER ALERT SCHEMAS
+# ============================================================================
 
-class CaseUpdate(BaseSchema):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    status: Optional[CaseStatus] = None
-    priority: Optional[CrisisLevel] = None
-    crisis_indicators: Optional[List[str]] = None
-    services_needed: Optional[List[ServiceType]] = None
-    notes: Optional[str] = None
-    assigned_user_id: Optional[str] = None
-
-class Case(CaseBase):
-    id: str
-    client_id: str
-    assigned_user_id: Optional[str] = None
-    created_by: str
-    case_number: str
-    care_plan: Optional[Dict[str, Any]] = None
-    created_at: datetime
-    updated_at: datetime
-    closed_at: Optional[datetime] = None
-
-# Assessment schemas
-class AssessmentBase(BaseSchema):
-    assessment_type: str
-    questions: Optional[Dict[str, Any]] = None
-    crisis_score: Optional[float] = None
-    recommended_services: Optional[List[ServiceType]] = None
-
-class AssessmentCreate(AssessmentBase):
-    client_id: str
-    case_id: Optional[str] = None
-
-class Assessment(AssessmentBase):
-    id: str
-    client_id: str
-    case_id: Optional[str] = None
-    ai_analysis: Optional[Dict[str, Any]] = None
-    created_by: str
-    created_at: datetime
-
-# Intervention schemas
-class InterventionBase(BaseSchema):
-    intervention_type: str
-    service_type: ServiceType
-    provider_name: Optional[str] = None
-    provider_contact: Optional[str] = None
-    description: Optional[str] = None
-    status: str = "pending"
-    scheduled_date: Optional[datetime] = None
-    outcome: Optional[str] = None
-    notes: Optional[str] = None
-
-class InterventionCreate(InterventionBase):
-    case_id: str
-
-class InterventionUpdate(BaseSchema):
-    intervention_type: Optional[str] = None
-    service_type: Optional[ServiceType] = None
-    provider_name: Optional[str] = None
-    provider_contact: Optional[str] = None
-    description: Optional[str] = None
-    status: Optional[str] = None
-    scheduled_date: Optional[datetime] = None
-    completed_date: Optional[datetime] = None
-    outcome: Optional[str] = None
-    notes: Optional[str] = None
-
-class Intervention(InterventionBase):
-    id: str
-    case_id: str
-    created_by: str
-    created_at: datetime
-    updated_at: datetime
-
-# Document schemas
-class DocumentBase(BaseSchema):
-    filename: str
-    original_filename: str
-    file_path: str
-    file_size: Optional[int] = None
-    mime_type: Optional[str] = None
-    document_type: Optional[str] = None
-    description: Optional[str] = None
-
-class DocumentCreate(DocumentBase):
-    case_id: str
-
-class Document(DocumentBase):
-    id: str
-    case_id: str
-    uploaded_by: str
-    created_at: datetime
-
-# Resource schemas
-class ResourceBase(BaseSchema):
-    name: str
-    description: Optional[str] = None
-    service_type: ServiceType
-    provider_name: str
-    contact_phone: Optional[str] = None
-    contact_email: Optional[EmailStr] = None
-    website: Optional[str] = None
-    address: Optional[str] = None
-    city: Optional[str] = None
-    state: Optional[str] = None
-    zip_code: Optional[str] = None
-    eligibility_requirements: Optional[List[str]] = None
-    hours_of_operation: Optional[Dict[str, str]] = None
-    languages_supported: Optional[List[LanguageCode]] = None
-    is_active: bool = True
-
-class ResourceCreate(ResourceBase):
-    pass
-
-class ResourceUpdate(BaseSchema):
-    name: Optional[str] = None
-    description: Optional[str] = None
-    service_type: Optional[ServiceType] = None
-    provider_name: Optional[str] = None
-    contact_phone: Optional[str] = None
-    contact_email: Optional[EmailStr] = None
-    website: Optional[str] = None
-    address: Optional[str] = None
-    city: Optional[str] = None
-    state: Optional[str] = None
-    zip_code: Optional[str] = None
-    eligibility_requirements: Optional[List[str]] = None
-    hours_of_operation: Optional[Dict[str, str]] = None
-    languages_supported: Optional[List[LanguageCode]] = None
-    is_active: Optional[bool] = None
-
-class Resource(ResourceBase):
-    id: str
-    created_at: datetime
-    updated_at: datetime
-
-# Compliance schemas
-class ComplianceReportBase(BaseSchema):
-    report_type: str
-    report_period_start: date
-    report_period_end: date
-    data: Dict[str, Any]
-    status: str = "draft"
-
-class ComplianceReportCreate(ComplianceReportBase):
-    pass
-
-class ComplianceReport(ComplianceReportBase):
-    id: str
-    submitted_at: Optional[datetime] = None
-    approved_at: Optional[datetime] = None
-    created_by: str
-    created_at: datetime
-
-# AI Service schemas
-class AIRequest(BaseSchema):
-    query: str
-    context: Optional[Dict[str, Any]] = None
-    client_id: Optional[str] = None
-    case_id: Optional[str] = None
-
-class AIResponse(BaseSchema):
-    response: str
-    confidence: float
-    suggestions: Optional[List[str]] = None
-    crisis_indicators: Optional[List[str]] = None
-    recommended_actions: Optional[List[str]] = None
-
-class TriageRequest(BaseSchema):
-    client_id: str
-    responses: Dict[str, Any]
-    language: LanguageCode = LanguageCode.EN
-
-class TriageResponse(BaseSchema):
-    crisis_level: CrisisLevel
-    crisis_score: float
-    crisis_indicators: List[str]
-    recommended_services: List[ServiceType]
-    immediate_actions: List[str]
-    care_plan: Dict[str, Any]
-
-class CarePlanRequest(BaseSchema):
-    case_id: str
-    client_profile: Dict[str, Any]
-    services_needed: List[ServiceType]
-    crisis_level: CrisisLevel
-
-class CarePlanResponse(BaseSchema):
-    care_plan: Dict[str, Any]
-    timeline: List[Dict[str, Any]]
-    resources: List[Dict[str, Any]]
-    success_metrics: Dict[str, Any]
-
-# Crisis Detection schemas
-class CrisisDetectionRequest(BaseSchema):
-    text: str
-    context: Optional[Dict[str, Any]] = None
-    client_id: Optional[str] = None
-
-class CrisisDetectionResponse(BaseSchema):
-    risk_level: CrisisLevel
-    confidence: float
-    triggers: List[str]
-    recommended_actions: List[str]
-    escalation_required: bool
-    emergency_contacts: Optional[List[Dict[str, str]]] = None
-
-# Compliance schemas
-class HUDReportRequest(BaseSchema):
-    start_date: date
-    end_date: date
-    include_clients: bool = True
-    include_services: bool = True
-
-class HUDReportResponse(BaseSchema):
-    report_data: Dict[str, Any]
-    export_url: str
-    record_count: int
-
-class HMISExportRequest(BaseSchema):
-    start_date: date
-    end_date: date
-    format: str = "xml"  # xml, csv, json
-
-class HMISExportResponse(BaseSchema):
-    export_data: str
-    format: str
-    record_count: int
-
-# Analytics schemas
-class AnalyticsRequest(BaseSchema):
-    start_date: date
-    end_date: date
-    metrics: List[str]
-    filters: Optional[Dict[str, Any]] = None
-
-class AnalyticsResponse(BaseSchema):
-    metrics: Dict[str, Any]
-    charts: List[Dict[str, Any]]
-    insights: List[str]
-    recommendations: List[str]
-
-# WebSocket schemas
-class WebSocketMessage(BaseSchema):
-    type: str
-    data: Dict[str, Any]
-    timestamp: datetime
-
-class NotificationMessage(BaseSchema):
-    user_id: str
+class CaseworkerAlertResponse(BaseModel):
+    """Alert displayed to caseworker"""
+    id: UUID
+    alert_type: str
+    priority: str
     title: str
     message: str
-    type: str
-    priority: str = "normal"
-    data: Optional[Dict[str, Any]] = None
+    client_id: Optional[UUID]
+    case_id: Optional[UUID]
+    mutual_support_pair_id: Optional[UUID]
+    location_id: Optional[UUID]
+    location_name: Optional[str] = None
+    is_read: bool
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
 
-# Error schemas
-class ErrorResponse(BaseSchema):
-    error: str
-    detail: Optional[str] = None
-    type: str
-    timestamp: datetime
+# ============================================================================
+# ANALYTICS SCHEMAS (City Dashboard)
+# ============================================================================
 
-# Pagination schemas
-class PaginationParams(BaseSchema):
-    page: int = Field(1, ge=1)
-    size: int = Field(10, ge=1, le=100)
-    sort_by: Optional[str] = None
-    sort_order: str = "asc"
+class GeospatialHeatmapPoint(BaseModel):
+    """Single point on heat map"""
+    latitude: float
+    longitude: float
+    weight: int  # Number of intakes
+    location_name: str
+    location_code: str
 
-class PaginatedResponse(BaseSchema):
-    items: List[Any]
-    total: int
-    page: int
-    size: int
-    pages: int
-    has_next: bool
-    has_prev: bool
+class CityAnalyticsSummary(BaseModel):
+    """High-level city metrics"""
+    total_intakes: int
+    intakes_this_month: int
+    mutual_support_pairs_detected: int
+    estimated_total_savings: float
+    active_locations: int
+    avg_crisis_level: str
+    top_services_requested: List[Dict[str, Any]]
+    
+class CityAnalyticsGeospatial(BaseModel):
+    """Geospatial analytics for city dashboard"""
+    heatmap_points: List[GeospatialHeatmapPoint]
+    location_rankings: List[LocationAnalytics]
+    trend_analysis: Dict[str, Any]
+    ai_recommendations: List[str]
+
+# ============================================================================
+# QR CODE GENERATION
+# ============================================================================
+
+class QRCodeRequest(BaseModel):
+    """Generate QR code for a location"""
+    location_code: str
+    size: Optional[int] = Field(300, ge=100, le=1000)  # Pixels
+    format: Optional[str] = Field("PNG", pattern="^(PNG|SVG)$")
+
+class QRCodeResponse(BaseModel):
+    """Generated QR code details"""
+    location_code: str
+    qr_code_url: str  # URL that QR code points to
+    qr_code_image_url: str  # PNG/SVG image download link
+    display_name: str
+    location_type: str
+    instructions: str = "Scan this code to connect with services"
+
+# ============================================================================
+# HEALTH CHECK
+# ============================================================================
+
+class HealthResponse(BaseModel):
+    """Health check response"""
+    status: str = "healthy"
+    version: str
+    timestamp: str
+    services: Dict[str, str] = {}
+
+# ============================================================================
+# ERROR RESPONSES
+# ============================================================================
+
+class ErrorResponse(BaseModel):
+    """Standard error response"""
+    detail: str
+    error_code: Optional[str] = None
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
