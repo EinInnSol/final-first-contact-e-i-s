@@ -196,8 +196,8 @@ class User(Base):
     
     # Relationships
     organization = relationship("Organization", back_populates="users")
-    assigned_cases = relationship("Case", back_populates="assigned_caseworker")
-    created_cases = relationship("Case", back_populates="created_by_user", foreign_keys="Case.created_by")
+    assigned_cases = relationship("Case", foreign_keys="Case.assigned_caseworker_id", back_populates="assigned_caseworker")
+    created_cases = relationship("Case", foreign_keys="Case.created_by", back_populates="created_by_user")
 
 # ============================================================================
 # CLIENT DATA (PHI/PII)
@@ -496,8 +496,8 @@ class MutualSupportAlert(Base):
     read_at = Column(DateTime)
     dismissed_at = Column(DateTime)
     
-    # Metadata
-    metadata = Column(JSON)  # Additional context (confidence score, cost savings, etc.)
+    # Additional context
+    alert_metadata = Column(JSON)  # Changed from 'metadata' (reserved by SQLAlchemy)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

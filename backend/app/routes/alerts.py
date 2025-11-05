@@ -142,7 +142,9 @@ async def dismiss_alert(
     alert.status = "dismissed"
     alert.dismissed_at = datetime.utcnow()
     if reason:
-        alert.metadata["dismissal_reason"] = reason
+        if not alert.alert_metadata:
+            alert.alert_metadata = {}
+        alert.alert_metadata["dismissal_reason"] = reason
     db.commit()
     
     logger.info(f"Alert {alert_id} dismissed: {reason}")

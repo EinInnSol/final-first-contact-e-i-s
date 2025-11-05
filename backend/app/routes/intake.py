@@ -202,7 +202,7 @@ async def submit_intake(
                     severity="high" if pair_result.confidence_score >= 0.85 else "medium",
                     message=f"High-confidence mutual support relationship detected between {client.first_name} and {other_client.first_name}",
                     recommended_actions=pair_result.recommended_actions,
-                    metadata={
+                    alert_metadata={
                         "confidence_score": pair_result.confidence_score,
                         "ihss_eligible": pair_result.ihss_eligible,
                         "cost_savings": pair_result.consolidation_benefits,
