@@ -3,7 +3,7 @@ First Contact E.I.S. - Orchestration API Routes
 Exposes the Brain's functionality via REST API
 
 Author: Claude (CTO, EINHARJER INNOVATIVE SOLUTIONS LLC)
-Date: November 6, 2025
+Date: November 7, 2025
 """
 
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from typing import Dict, Any, List
 from datetime import datetime
 import logging
+import asyncio
 
 from ..database import get_db
 from ..services.orchestrator import OrchestrationEngine, Event
@@ -20,6 +21,9 @@ from ..services.event_listener import EventListenerService
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+# In-memory storage for demo (replace with Firestore in production)
+recommendations_store: Dict[str, Dict[str, Any]] = {}
 
 
 # ============================================================================
@@ -101,6 +105,27 @@ def get_event_listener(
 # ROUTES
 # ============================================================================
 
+@router.get("/recommendations", response_model=List[RecommendationResponse])
+async def get_recommendations():
+    """
+    Get all recommendations
+    
+    Returns list of pending, executing, and completed recommendations
+    """
+    try:
+        # Return recommendations from in-memory store
+        recommendations = list(recommendations_store.values())
+        
+        # Sort by created_at (newest first)
+        recommendations.sort(key=lambda x: x['created_at'], reverse=True)
+        
+        return recommendations
+        
+    except Exception as e:
+        logger.error(f"Error fetching recommendations: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/trigger-event", response_model=RecommendationResponse)
 async def trigger_event(
     request: TriggerEventRequest,
@@ -135,8 +160,8 @@ async def trigger_event(
                 detail="No recommendation generated for this event"
             )
         
-        # Return recommendation
-        return RecommendationResponse(
+        # Create response
+        response = RecommendationResponse(
             recommendation_id=recommendation.recommendation_id,
             summary=recommendation.summary,
             reasoning=recommendation.reasoning,
@@ -149,6 +174,14 @@ async def trigger_event(
             created_at=datetime.now()
         )
         
+        # Store recommendation with execution plan for later approval
+        recommendations_store[recommendation.recommendation_id] = {
+            **response.dict(),
+            "execution_plan": recommendation.execution_plan  # Store plan for execution
+        }
+        
+        return response
+        
     except Exception as e:
         logger.error(f"Error triggering event: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
@@ -159,7 +192,6 @@ async def approve_recommendation(
     recommendation_id: str,
     request: ApproveRecommendationRequest,
     background_tasks: BackgroundTasks,
-    orchestrator = Depends(get_orchestrator),
     executor = Depends(get_executor)
 ):
     """
@@ -168,26 +200,89 @@ async def approve_recommendation(
     This is the caseworker's one-click approval
     """
     try:
-        # TODO: Retrieve recommendation from database/cache
-        # For now, we'll need to store recommendations somewhere accessible
+        # Get recommendation from store
+        if recommendation_id not in recommendations_store:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Recommendation {recommendation_id} not found"
+            )
         
-        # TODO: Get execution plan from recommendation
-        # execution_plan = recommendation.execution_plan
+        stored_rec = recommendations_store[recommendation_id]
         
-        # For demo, return mock result
-        raise HTTPException(
-            status_code=501,
-            detail="Approval endpoint needs recommendation storage implementation"
+        # Update status to executing
+        stored_rec['status'] = 'executing'
+        
+        # Get execution plan
+        execution_plan = stored_rec.get('execution_plan')
+        if not execution_plan:
+            raise HTTPException(
+                status_code=400,
+                detail="No execution plan found for this recommendation"
+            )
+        
+        # Execute in background
+        async def execute_and_update():
+            try:
+                # Execute the plan
+                result = await executor.execute_plan(execution_plan, request.approved_by)
+                
+                # Update status based on result
+                if result.status == "success":
+                    stored_rec['status'] = 'completed'
+                elif result.status == "failed":
+                    stored_rec['status'] = 'failed'
+                else:
+                    stored_rec['status'] = 'partial_success'
+                    
+                logger.info(f"Recommendation {recommendation_id} execution completed: {result.status}")
+                
+            except Exception as e:
+                logger.error(f"Error executing recommendation: {e}", exc_info=True)
+                stored_rec['status'] = 'failed'
+        
+        # Start execution in background
+        background_tasks.add_task(execute_and_update)
+        
+        # Return immediate response
+        return ExecutionResultResponse(
+            plan_id=execution_plan.plan_id,
+            status="executing",
+            actions_completed=0,
+            actions_failed=0,
+            total_duration_seconds=0,
+            rollback_performed=False
         )
-        
-        # Real implementation would be:
-        # result = await executor.execute_plan(execution_plan, request.approved_by)
-        # return ExecutionResultResponse(**result.__dict__)
         
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error approving recommendation: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/recommendations/{recommendation_id}/reject")
+async def reject_recommendation(
+    recommendation_id: str
+):
+    """
+    Reject a recommendation
+    """
+    try:
+        if recommendation_id not in recommendations_store:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Recommendation {recommendation_id} not found"
+            )
+        
+        # Update status
+        recommendations_store[recommendation_id]['status'] = 'rejected'
+        
+        return {"status": "rejected", "recommendation_id": recommendation_id}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error rejecting recommendation: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
