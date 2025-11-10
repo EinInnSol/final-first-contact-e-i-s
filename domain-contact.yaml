@@ -3,14 +3,14 @@
 
 allContacts:
   email: "faernstromjames@gmail.com"
-  phoneNumber: "+1.YOUR_PHONE_HERE"  # Format: +1.5551234567
+  phoneNumber: "+1-562-620-0911  # Format: +1.5551234567
   postalAddress:
     recipients:
       - "James Faernstrom"
     organization: "EINHARJER INNOVATIVE SOLUTIONS LLC"
     addressLines:
-      - "YOUR_STREET_ADDRESS_HERE"
-    locality: "YOUR_CITY_HERE"
+      - "2436 east 4th street #1303"
+    locality: "Long Beach"
     regionCode: "US"
-    postalCode: "YOUR_ZIP_HERE"
+    postalCode: "90814"
     administrativeArea: "CA"  # Your state code
