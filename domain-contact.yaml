@@ -1,0 +1,16 @@
+# Domain Contact Information for einharjer.com
+# Fill in your actual details below
+
+allContacts:
+  email: "faernstromjames@gmail.com"
+  phoneNumber: "+1.YOUR_PHONE_HERE"  # Format: +1.5551234567
+  postalAddress:
+    recipients:
+      - "James Faernstrom"
+    organization: "EINHARJER INNOVATIVE SOLUTIONS LLC"
+    addressLines:
+      - "YOUR_STREET_ADDRESS_HERE"
+    locality: "YOUR_CITY_HERE"
+    regionCode: "US"
+    postalCode: "YOUR_ZIP_HERE"
+    administrativeArea: "CA"  # Your state code

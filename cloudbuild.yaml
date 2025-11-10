@@ -1,0 +1,166 @@
+# Cloud Build Pipeline - Autonomous Code Generation
+# Uses Vertex AI Claude 4.5 to build remaining components
+
+steps:
+  # Step 1: Setup Python environment
+  - name: 'python:3.11'
+    id: 'setup-python'
+    entrypoint: 'pip'
+    args: ['install', 'google-cloud-aiplatform', 'anthropic']
+
+  # Step 2: Generate seed data script
+  - name: 'python:3.11'
+    id: 'generate-seed-data'
+    entrypoint: 'python'
+    args:
+      - '-c'
+      - |
+        from google.cloud import aiplatform
+        import os
+        
+        aiplatform.init(project='${PROJECT_ID}', location='us-east5')
+        
+        model = aiplatform.Model('claude-sonnet-4-5@20250929')
+        
+        # Read architecture docs
+        with open('docs/SYSTEM_ARCHITECTURE.md', 'r') as f:
+            architecture = f.read()
+        
+        prompt = f"""Based on this architecture:
+        
+        {architecture}
+        
+        Create backend/scripts/seed_demo_data.py that:
+        1. Seeds PostgreSQL with demo clients (Maria, Robert)
+        2. Creates mock appointments
+        3. Sets up provider data
+        4. Includes demo trigger function
+        
+        Return ONLY the complete Python code, no explanations."""
+        
+        response = model.predict(prompt)
+        
+        # Write generated code
+        with open('backend/scripts/seed_demo_data.py', 'w') as f:
+            f.write(response.text)
+        
+        print('✅ Seed data script generated')
+
+  # Step 3: Generate frontend components
+  - name: 'python:3.11'
+    id: 'generate-frontend'
+    entrypoint: 'python'
+    args:
+      - '-c'
+      - |
+        from google.cloud import aiplatform
+        
+        aiplatform.init(project='${PROJECT_ID}', location='us-east5')
+        model = aiplatform.Model('claude-sonnet-4-5@20250929')
+        
+        # Generate RecommendationsFeed component
+        prompt = """Create frontend/caseworker/src/components/RecommendationsFeed.tsx
+        
+        Requirements:
+        - Display AI recommendations with APPROVE button
+        - Poll /api/v1/orchestration/recommendations every 5s
+        - Show execution status
+        - Enterprise Tailwind styling
+        
+        Return complete TypeScript/React code."""
+        
+        response = model.predict(prompt)
+        
+        with open('frontend/caseworker/src/components/RecommendationsFeed.tsx', 'w') as f:
+            f.write(response.text)
+        
+        print('✅ Frontend components generated')
+
+  # Step 4: Generate API hooks
+  - name: 'python:3.11'
+    id: 'generate-hooks'
+    entrypoint: 'python'
+    args:
+      - '-c'
+      - |
+        from google.cloud import aiplatform
+        
+        aiplatform.init(project='${PROJECT_ID}', location='us-east5')
+        model = aiplatform.Model('claude-sonnet-4-5@20250929')
+        
+        prompt = """Create frontend/caseworker/src/hooks/useOrchestration.ts
+        
+        Requirements:
+        - useRecommendations() hook with React Query
+        - useApproveRecommendation() mutation
+        - useTriggerDemoEvent() hook
+        
+        Return complete TypeScript code."""
+        
+        response = model.predict(prompt)
+        
+        with open('frontend/caseworker/src/hooks/useOrchestration.ts', 'w') as f:
+            f.write(response.text)
+        
+        print('✅ API hooks generated')
+
+  # Step 5: Wire everything together
+  - name: 'python:3.11'
+    id: 'wire-integration'
+    entrypoint: 'python'
+    args:
+      - '-c'
+      - |
+        from google.cloud import aiplatform
+        
+        aiplatform.init(project='${PROJECT_ID}', location='us-east5')
+        model = aiplatform.Model('claude-sonnet-4-5@20250929')
+        
+        # Read current main.py
+        with open('backend/app/main.py', 'r') as f:
+            main_py = f.read()
+        
+        prompt = f"""Update this main.py to include orchestration routes:
+        
+        Current code:
+        {main_py}
+        
+        Add:
+        - Import orchestration router
+        - Include with prefix /api/v1/orchestration
+        - Initialize services on startup
+        
+        Return complete updated main.py."""
+        
+        response = model.predict(prompt)
+        
+        with open('backend/app/main.py', 'w') as f:
+            f.write(response.text)
+        
+        print('✅ Integration complete')
+
+  # Step 6: Commit to git
+  - name: 'gcr.io/cloud-builders/git'
+    id: 'commit-changes'
+    args:
+      - 'add'
+      - '.'
+  
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - 'commit'
+      - '-m'
+      - 'feat: Auto-generated components via Cloud Build + Vertex AI'
+  
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - 'push'
+      - 'origin'
+      - 'gcp-vertex-deployment'
+
+# Build takes ~5-10 minutes
+timeout: 1200s
+
+substitutions:
+  _PROJECT_ID: 'einharjer-valhalla'
+  _REGION: 'us-east5'

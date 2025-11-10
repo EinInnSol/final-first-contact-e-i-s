@@ -1,205 +1,92 @@
-/**
- * API Hooks for Orchestration
- * Connects frontend to the Brain's recommendation system
- */
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-hot-toast';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
-
-// Types
-interface Recommendation {
-  recommendation_id: string;
-  summary: string;
-  reasoning: string[];
-  impact: {
-    cost_savings?: number;
-    urgency_improvement?: string;
-    efficiency_gain?: number;
-  };
-  confidence_score: number;
-  actions_count: number;
-  estimated_duration_seconds: number;
-  affected_systems: string[];
-  status: 'pending_approval' | 'approved' | 'rejected' | 'executing' | 'completed';
-  created_at: string;
-}
-
-/**
- * Hook to fetch recommendations from orchestration API
- */
+// Poll recommendations every 5 seconds
 export function useRecommendations() {
-  return useQuery<Recommendation[]>({
+  return useQuery({
     queryKey: ['recommendations'],
     queryFn: async () => {
-      const response = await fetch(`${API_BASE_URL}/orchestration/recommendations`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch recommendations');
-      }
-
-      return response.json();
+      const res = await fetch(`${API_URL}/api/v1/orchestration/recommendations`)
+      if (!res.ok) throw new Error('Failed to fetch recommendations')
+      return res.json()
     },
-    refetchInterval: 5000, // Poll every 5 seconds for new recommendations
-    staleTime: 0, // Always consider stale so we refetch
-  });
+    refetchInterval: 5000, // Auto-poll every 5s
+  })
 }
 
-/**
- * Hook to approve a recommendation
- */
+// Approve recommendation
 export function useApproveRecommendation() {
-  const queryClient = useQueryClient();
-
+  const queryClient = useQueryClient()
+  
   return useMutation({
     mutationFn: async (recommendationId: string) => {
-      const response = await fetch(
-        `${API_BASE_URL}/orchestration/recommendations/${recommendationId}/approve`,
+      const res = await fetch(
+        `${API_URL}/api/v1/orchestration/recommendations/${recommendationId}/approve`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-          },
-          body: JSON.stringify({
-            approved_by: localStorage.getItem('user_id') || 'caseworker',
-          }),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ approved_by: 'caseworker_demo' })
         }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to approve recommendation');
-      }
-
-      return response.json();
-    },
-    onSuccess: (data, recommendationId) => {
-      // Invalidate and refetch recommendations
-      queryClient.invalidateQueries({ queryKey: ['recommendations'] });
-      
-      toast.success('Recommendation approved! Executing actions...', {
-        duration: 3000,
-        icon: '✅',
-      });
-    },
-    onError: (error) => {
-      toast.error('Failed to approve recommendation. Please try again.', {
-        duration: 5000,
-      });
-      console.error('Approval error:', error);
-    },
-  });
-}
-
-/**
- * Hook to reject a recommendation
- */
-export function useRejectRecommendation() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (recommendationId: string) => {
-      const response = await fetch(
-        `${API_BASE_URL}/orchestration/recommendations/${recommendationId}/reject`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to reject recommendation');
-      }
-
-      return response.json();
+      )
+      if (!res.ok) throw new Error('Approval failed')
+      return res.json()
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['recommendations'] });
-      toast.success('Recommendation rejected', {
-        icon: '❌',
-      });
-    },
-    onError: (error) => {
-      toast.error('Failed to reject recommendation');
-      console.error('Rejection error:', error);
-    },
-  });
+      queryClient.invalidateQueries({ queryKey: ['recommendations'] })
+    }
+  })
 }
 
-/**
- * Hook to trigger a manual event (for demo/testing)
- */
-export function useTriggerEvent() {
-  const queryClient = useQueryClient();
-
+// Reject recommendation
+export function useRejectRecommendation() {
+  const queryClient = useQueryClient()
+  
   return useMutation({
-    mutationFn: async (eventData: {
-      event_type: string;
-      client_id?: string;
-      provider_id?: string;
-      metadata?: Record<string, any>;
-    }) => {
-      const response = await fetch(
-        `${API_BASE_URL}/orchestration/trigger-event`,
+    mutationFn: async (recommendationId: string) => {
+      const res = await fetch(
+        `${API_URL}/api/v1/orchestration/recommendations/${recommendationId}/reject`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-          },
-          body: JSON.stringify(eventData),
+          headers: { 'Content-Type': 'application/json' }
         }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to trigger event');
-      }
-
-      return response.json();
+      )
+      if (!res.ok) throw new Error('Rejection failed')
+      return res.json()
     },
-    onSuccess: (data) => {
-      // Invalidate recommendations to fetch the new one
-      queryClient.invalidateQueries({ queryKey: ['recommendations'] });
-      
-      toast.success('Event triggered! New recommendation incoming...', {
-        duration: 3000,
-        icon: '⚡',
-      });
-    },
-    onError: (error) => {
-      toast.error('Failed to trigger event');
-      console.error('Event trigger error:', error);
-    },
-  });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recommendations'] })
+    }
+  })
 }
 
-/**
- * Hook to get orchestration statistics
- */
-export function useOrchestrationStats() {
-  return useQuery({
-    queryKey: ['orchestration-stats'],
-    queryFn: async () => {
-      const response = await fetch(`${API_BASE_URL}/orchestration/statistics`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch statistics');
-      }
-
-      return response.json();
+// Trigger demo event
+export function useTriggerDemoEvent() {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`${API_URL}/api/v1/orchestration/trigger-event`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event_type: 'appointment_cancelled',
+          client_id: 'maria_demo_001',
+          provider_id: 'dr_smith_001',
+          metadata: {
+            appointment_time: new Date(Date.now() + 86400000).toISOString(), // tomorrow
+            reason: 'client_cancellation'
+          }
+        })
+      })
+      if (!res.ok) throw new Error('Failed to trigger event')
+      return res.json()
     },
-    refetchInterval: 30000, // Refetch every 30 seconds
-  });
+    onSuccess: () => {
+      // Refetch recommendations after triggering
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['recommendations'] })
+      }, 2000)
+    }
+  })
 }
