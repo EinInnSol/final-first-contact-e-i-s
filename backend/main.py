@@ -23,6 +23,7 @@ from app.ai_municipal_intelligence import AIMunicipalIntelligence
 from app.ai_kiosk_intelligence import AIKioskIntelligence
 from app.ai_system_management import AISystemManagement
 from app.ai_cross_system_learning import AICrossSystemLearning
+from app.intakes import router as intakes_router
 from app.models import Base
 from app.schemas import HealthResponse
 from health_check import health_check_router
@@ -144,6 +145,7 @@ async def root():
 app.include_router(health_check_router, prefix="/api/v1", tags=["Health"])
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(ai_router, prefix="/api/v1/ai", tags=["AI Services"])
+app.include_router(intakes_router, prefix="/api/v1/intakes", tags=["Intakes"])
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
