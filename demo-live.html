@@ -1,0 +1,1782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>First Contact EIS - Live Demo | Long Beach Pilot</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* View Management */
+        .view {
+            display: none;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        /* QR Code Landing */
+        .qr-landing {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+        }
+
+        .qr-code-box {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin: 30px 0;
+        }
+
+        .qr-code {
+            width: 300px;
+            height: 300px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid #667eea;
+            border-radius: 15px;
+        }
+
+        .start-btn {
+            padding: 20px 50px;
+            background: white;
+            color: #667eea;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+        /* Onboarding Form */
+        .onboarding-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 900px;
+            margin: 40px auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .form-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .form-header h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+        }
+
+        .form-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Success Screen */
+        .success-screen {
+            background: white;
+            border-radius: 20px;
+            padding: 60px 40px;
+            max-width: 700px;
+            margin: 100px auto;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .success-icon {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+            font-size: 3rem;
+            color: white;
+            animation: scaleIn 0.5s ease-out;
+        }
+
+        .caseworker-info {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+            margin: 30px 0;
+        }
+
+        .caseworker-photo {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 3rem;
+            color: white;
+        }
+
+        /* Caseworker Dashboard */
+        .dashboard {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-top: 40px;
+        }
+
+        .dashboard-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .notification-bell {
+            position: relative;
+            cursor: pointer;
+            font-size: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .notification-bell:hover {
+            transform: scale(1.1);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #dc3545;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: 700;
+            animation: pulse 2s infinite;
+        }
+
+        .dashboard-content {
+            padding: 40px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin: 10px 0;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        /* Notification Panel */
+        .notification-panel {
+            position: fixed;
+            top: 0;
+            right: -500px;
+            width: 450px;
+            height: 100vh;
+            background: white;
+            box-shadow: -5px 0 30px rgba(0,0,0,0.3);
+            transition: right 0.3s ease;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .notification-panel.open {
+            right: 0;
+        }
+
+        .notification-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .notification-item {
+            padding: 20px;
+            border-bottom: 2px solid #e9ecef;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .notification-item:hover {
+            background: #f8f9fa;
+        }
+
+        .notification-item.unread {
+            background: #e7f3ff;
+            border-left: 4px solid #667eea;
+        }
+
+        /* Client Detail Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000;
+            overflow-y: auto;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            max-width: 900px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            margin: 20px;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .close-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .close-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            padding: 40px;
+        }
+
+        .ai-action-plan {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border-left: 5px solid #667eea;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .action-item {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border: 2px solid #e9ecef;
+        }
+
+        .action-item h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .confirm-btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .confirm-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(40, 167, 69, 0.4);
+        }
+
+        /* City Oversight Dashboard */
+        .oversight-container {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-top: 40px;
+        }
+
+        .oversight-header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .oversight-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 0;
+        }
+
+        .oversight-stat {
+            padding: 40px;
+            text-align: center;
+            border-right: 1px solid #e9ecef;
+            border-bottom: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .oversight-stat:hover {
+            background: #f8f9fa;
+            transform: scale(1.05);
+        }
+
+        .big-number {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin: 15px 0;
+        }
+
+        .comparison {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px;
+            text-align: center;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 30px;
+            margin-top: 20px;
+            align-items: center;
+        }
+
+        .before-box, .after-box {
+            padding: 30px;
+            border-radius: 15px;
+        }
+
+        .before-box {
+            background: #f8d7da;
+            border: 3px solid #dc3545;
+        }
+
+        .after-box {
+            background: #d4edda;
+            border: 3px solid #28a745;
+        }
+
+        .vs-divider {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #667eea;
+        }
+
+        .contractor-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 30px;
+        }
+
+        .contractor-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 25px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .contractor-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+            transform: translateY(-5px);
+        }
+
+        .performance-bar {
+            background: #e9ecef;
+            height: 30px;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 15px 0;
+            position: relative;
+        }
+
+        .performance-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            color: white;
+            font-weight: 700;
+            transition: width 1s ease;
+        }
+
+        .performance-fill.low {
+            background: linear-gradient(90deg, #dc3545 0%, #c82333 100%);
+        }
+
+        .performance-fill.medium {
+            background: linear-gradient(90deg, #ffc107 0%, #ff9800 100%);
+        }
+
+        .chart-container {
+            padding: 30px;
+            background: white;
+        }
+
+        .chart-wrapper {
+            max-width: 800px;
+            margin: 0 auto;
+            height: 400px;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .shake {
+            animation: shake 0.5s ease;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .vs-divider {
+                transform: rotate(90deg);
+            }
+
+            .notification-panel {
+                width: 100%;
+                right: -100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Audio for notification -->
+    <audio id="notification-sound" preload="auto">
+        <source src="data:audio/wav;base64,UklGRhYAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoAAACAgICAgICAgICA" type="audio/wav">
+    </audio>
+
+    <div class="container">
+        <!-- View 1: QR Code Landing -->
+        <div id="qr-view" class="view active">
+            <div class="qr-landing">
+                <h1 style="font-size: 3.5rem; margin-bottom: 20px;">
+                    <i class="fas fa-brain"></i> First Contact EIS
+                </h1>
+                <p style="font-size: 1.5rem; margin-bottom: 40px;">
+                    Self-Service Onboarding Portal
+                </p>
+
+                <div class="qr-code-box">
+                    <div class="qr-code">
+                        <!-- QR Code placeholder - in production would be actual QR -->
+                        <div style="text-align: center;">
+                            <i class="fas fa-qrcode" style="font-size: 8rem; color: #667eea;"></i>
+                            <p style="margin-top: 20px; color: #666; font-size: 0.9rem;">
+                                Scan to start onboarding
+                            </p>
+                        </div>
+                    </div>
+                    <p style="color: #667eea; font-weight: 700; margin-top: 20px; font-size: 1.2rem;">
+                        Scan QR code or click below to begin
+                    </p>
+                </div>
+
+                <button class="start-btn" onclick="startOnboarding()">
+                    <i class="fas fa-arrow-right"></i> Start Onboarding
+                </button>
+
+                <p style="margin-top: 30px; opacity: 0.9;">
+                    Available 24/7 • Multi-language • Fully accessible
+                </p>
+            </div>
+        </div>
+
+        <!-- View 2: Onboarding Form -->
+        <div id="onboarding-view" class="view">
+            <div class="onboarding-container">
+                <div class="form-header">
+                    <h1><i class="fas fa-clipboard-list"></i> Client Intake Form</h1>
+                    <p style="color: #6c757d;">HUD Standardized Assessment (HMIS Compliant)</p>
+                </div>
+
+                <form id="intake-form">
+                    <!-- Personal Information -->
+                    <div class="form-section">
+                        <h3><i class="fas fa-user"></i> Personal Information</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>First Name *</label>
+                                <input type="text" value="Marcus" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label>Last Name *</label>
+                                <input type="text" value="Williams" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label>Date of Birth *</label>
+                                <input type="date" value="1987-03-15" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label>Phone Number</label>
+                                <input type="tel" value="(562) 555-0142" readonly>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Housing Status -->
+                    <div class="form-section">
+                        <h3><i class="fas fa-home"></i> Current Housing Situation</h3>
+                        <div class="form-group">
+                            <label>Current Living Situation *</label>
+                            <select disabled>
+                                <option selected>Temporarily staying with friends/family (couch surfing)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>How long at current location?</label>
+                            <input type="text" value="3 weeks" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Times homeless in past 3 years?</label>
+                            <select disabled>
+                                <option selected>2 times</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Do you have a safe place to stay tonight? *</label>
+                            <select disabled>
+                                <option selected>Uncertain - depends on friend's availability</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Income & Employment -->
+                    <div class="form-section">
+                        <h3><i class="fas fa-dollar-sign"></i> Income & Employment</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Current Employment Status *</label>
+                                <select disabled>
+                                    <option selected>Recently unemployed (within 30 days)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Previous Occupation</label>
+                                <input type="text" value="Warehouse Associate" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label>Monthly Income</label>
+                                <input type="text" value="$0 - Currently no income" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label>Receiving any benefits?</label>
+                                <select disabled>
+                                    <option selected>Applied for unemployment, pending</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Health & Wellness -->
+                    <div class="form-section">
+                        <h3><i class="fas fa-heartbeat"></i> Health & Wellness</h3>
+                        <div class="form-group">
+                            <label>Do you have health insurance? *</label>
+                            <select disabled>
+                                <option selected>No, recently lost coverage</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Any ongoing health conditions?</label>
+                            <textarea readonly>Type 2 Diabetes - need to refill medication soon. Also experiencing high stress and anxiety about housing situation.</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Current medications?</label>
+                            <input type="text" value="Metformin (running low on supply)" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Mental health support needed?</label>
+                            <select disabled>
+                                <option selected>Yes - experiencing anxiety and depression</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Barriers & Needs -->
+                    <div class="form-section">
+                        <h3><i class="fas fa-exclamation-triangle"></i> Barriers & Immediate Needs</h3>
+                        <div class="form-group">
+                            <label>What are your most urgent needs? (Check all that apply)</label>
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                                <label style="display: block; margin-bottom: 8px;">
+                                    <input type="checkbox" checked disabled> Housing/Shelter
+                                </label>
+                                <label style="display: block; margin-bottom: 8px;">
+                                    <input type="checkbox" checked disabled> Employment
+                                </label>
+                                <label style="display: block; margin-bottom: 8px;">
+                                    <input type="checkbox" checked disabled> Healthcare/Medications
+                                </label>
+                                <label style="display: block; margin-bottom: 8px;">
+                                    <input type="checkbox" checked disabled> Mental Health Support
+                                </label>
+                                <label style="display: block; margin-bottom: 8px;">
+                                    <input type="checkbox" checked disabled> Food Assistance
+                                </label>
+                                <label style="display: block; margin-bottom: 8px;">
+                                    <input type="checkbox" disabled> Transportation
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Any barriers to employment or housing?</label>
+                            <textarea readonly>No transportation currently. Lost job due to company downsizing. Have good work history but need stable housing to maintain employment.</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Do you have any criminal history that might affect housing?</label>
+                            <select disabled>
+                                <option selected>No</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Support System -->
+                    <div class="form-section">
+                        <h3><i class="fas fa-users"></i> Support System</h3>
+                        <div class="form-group">
+                            <label>Do you have family or friends who can provide support?</label>
+                            <textarea readonly>Friend letting me stay temporarily but can't stay long-term. Sister lives out of state. No other local support network.</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Have you received services from other agencies?</label>
+                            <select disabled>
+                                <option selected>Yes - CalFresh, previously used food bank</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Goals -->
+                    <div class="form-section">
+                        <h3><i class="fas fa-bullseye"></i> Your Goals</h3>
+                        <div class="form-group">
+                            <label>What are your immediate goals? (30 days)</label>
+                            <textarea readonly>Find stable housing and secure new employment. Get health insurance and refill medications.</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>What are your long-term goals? (6-12 months)</label>
+                            <textarea readonly>Maintain stable housing and full-time employment. Build emergency savings. Get back on track with health management.</textarea>
+                        </div>
+                    </div>
+
+                    <!-- Consent -->
+                    <div class="form-section">
+                        <div style="background: #e7f3ff; padding: 20px; border-radius: 10px; border-left: 5px solid #667eea;">
+                            <label style="display: flex; align-items: start; gap: 10px;">
+                                <input type="checkbox" checked disabled style="margin-top: 4px;">
+                                <span>I consent to sharing this information with Long Beach service providers to coordinate care and access resources. I understand my information is protected under HIPAA and will only be used to help me access services.</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-btn" onclick="submitIntake(event)">
+                        <i class="fas fa-check-circle"></i> Submit Application
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- View 3: Success Screen -->
+        <div id="success-view" class="view">
+            <div class="success-screen">
+                <div class="success-icon">
+                    <i class="fas fa-check"></i>
+                </div>
+
+                <h1 style="color: #28a745; margin-bottom: 20px;">Application Received!</h1>
+                <p style="font-size: 1.2rem; color: #6c757d; margin-bottom: 30px;">
+                    Thank you, Marcus. We've received your information and our AI has already analyzed your needs.
+                </p>
+
+                <div class="caseworker-info">
+                    <div class="caseworker-photo">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    <h3 style="color: #667eea; margin-bottom: 15px;">Your Caseworker</h3>
+                    <h2 style="margin-bottom: 10px;">Amber Schmutz</h2>
+                    <p style="font-size: 1.3rem; color: #28a745; font-weight: 700; margin: 15px 0;">
+                        <i class="fas fa-phone"></i> (562) 681-1431
+                    </p>
+                    <div style="background: white; padding: 20px; border-radius: 10px; margin-top: 20px; border: 2px solid #667eea;">
+                        <p style="font-weight: 600; margin-bottom: 10px;">
+                            <i class="fas fa-clock"></i> Expected Call Time
+                        </p>
+                        <p style="font-size: 1.5rem; color: #667eea; font-weight: 700;">
+                            Within 2 hours
+                        </p>
+                        <p style="font-size: 0.9rem; color: #6c757d; margin-top: 10px;">
+                            Amber has been notified and will call you soon to discuss your action plan.
+                        </p>
+                    </div>
+                </div>
+
+                <div style="background: #d4edda; padding: 20px; border-radius: 10px; border-left: 5px solid #28a745; margin-top: 20px;">
+                    <p style="color: #155724; font-weight: 600;">
+                        <i class="fas fa-robot"></i> AI is working on your case
+                    </p>
+                    <p style="color: #155724; margin-top: 10px; font-size: 0.95rem;">
+                        Our AI has identified resources and programs that match your needs. Amber will review the recommendations and create a personalized action plan for you.
+                    </p>
+                </div>
+
+                <button class="start-btn" style="margin-top: 30px; padding: 15px 40px; font-size: 1.2rem;" onclick="showCaseworkerDashboard()">
+                    <i class="fas fa-arrow-right"></i> Continue to Demo
+                </button>
+            </div>
+        </div>
+
+        <!-- View 4: Caseworker Dashboard -->
+        <div id="caseworker-view" class="view">
+            <div class="dashboard">
+                <div class="dashboard-header">
+                    <div>
+                        <h2><i class="fas fa-briefcase"></i> Caseworker Dashboard</h2>
+                        <p style="opacity: 0.9; margin-top: 5px;">Welcome, Amber Schmutz</p>
+                    </div>
+                    <div class="notification-bell" onclick="toggleNotifications()">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge" id="notification-count">3</span>
+                    </div>
+                </div>
+
+                <div class="dashboard-content">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Active Cases</div>
+                            <div class="stat-number">24</div>
+                        </div>
+                        <div class="stat-card" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                            <div class="stat-label">Cases Resolved (30 days)</div>
+                            <div class="stat-number">18</div>
+                        </div>
+                        <div class="stat-card" style="background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);">
+                            <div class="stat-label">Pending Actions</div>
+                            <div class="stat-number">3</div>
+                        </div>
+                        <div class="stat-card" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">
+                            <div class="stat-label">AI Recommendations</div>
+                            <div class="stat-number">7</div>
+                        </div>
+                    </div>
+
+                    <div style="background: #e7f3ff; padding: 25px; border-radius: 15px; border-left: 5px solid #667eea;">
+                        <h3 style="color: #667eea; margin-bottom: 10px;">
+                            <i class="fas fa-robot"></i> AI Assistant Active
+                        </h3>
+                        <p style="color: #0c5460;">
+                            You have 3 new notifications requiring attention. Click the bell icon to review AI-generated action plans and priority cases.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- View 5: City Oversight Dashboard -->
+        <div id="oversight-view" class="view">
+            <div class="oversight-container">
+                <div class="oversight-header">
+                    <h1 style="font-size: 3rem; margin-bottom: 15px;">
+                        <i class="fas fa-city"></i> City Oversight Dashboard
+                    </h1>
+                    <p style="font-size: 1.3rem; opacity: 0.95;">
+                        Real-Time Accountability & Performance Tracking
+                    </p>
+                    <p style="margin-top: 10px; font-size: 1.1rem;">
+                        Long Beach Homelessness & Human Services Programs
+                    </p>
+                </div>
+
+                <!-- The Shocking Comparison -->
+                <div class="comparison">
+                    <h2 style="color: #856404; margin-bottom: 20px;">
+                        <i class="fas fa-exclamation-triangle"></i> The Problem We're Solving
+                    </h2>
+                    <div class="comparison-grid">
+                        <div class="before-box">
+                            <h3 style="color: #721c24; margin-bottom: 15px;">2024: Without This System</h3>
+                            <div class="big-number" style="color: #dc3545;">$54M</div>
+                            <p style="font-weight: 600;">Invested in Programs</p>
+                            <div class="big-number" style="color: #dc3545; font-size: 4rem;">71</div>
+                            <p style="font-weight: 600;">People Permanently Housed</p>
+                            <hr style="margin: 20px 0; border-color: #dc3545;">
+                            <p style="font-weight: 700; font-size: 1.3rem; color: #721c24;">
+                                $760,563 per person!
+                            </p>
+                            <p style="margin-top: 15px; font-size: 0.95rem;">
+                                ❌ No real-time tracking<br>
+                                ❌ No coordination<br>
+                                ❌ No accountability<br>
+                                ❌ No AI optimization
+                            </p>
+                        </div>
+
+                        <div class="vs-divider">VS</div>
+
+                        <div class="after-box">
+                            <h3 style="color: #155724; margin-bottom: 15px;">With First Contact EIS</h3>
+                            <div class="big-number" style="color: #28a745;">$54M</div>
+                            <p style="font-weight: 600;">Same Investment</p>
+                            <div class="big-number" style="color: #28a745; font-size: 4rem;">487</div>
+                            <p style="font-weight: 600;">People Permanently Housed (Projected)</p>
+                            <hr style="margin: 20px 0; border-color: #28a745;">
+                            <p style="font-weight: 700; font-size: 1.3rem; color: #155724;">
+                                $110,884 per person
+                            </p>
+                            <p style="margin-top: 15px; font-size: 0.95rem;">
+                                ✅ Real-time tracking<br>
+                                ✅ Cross-org coordination<br>
+                                ✅ Full accountability<br>
+                                ✅ AI-optimized outcomes
+                            </p>
+                        </div>
+                    </div>
+                    <div style="margin-top: 30px; padding: 20px; background: white; border-radius: 10px;">
+                        <h3 style="color: #28a745; margin-bottom: 10px;">
+                            <i class="fas fa-chart-line"></i> 586% Improvement in Outcomes
+                        </h3>
+                        <p style="font-size: 1.1rem;">
+                            Same budget. Better coordination. AI-powered optimization. <strong>7x more people housed.</strong>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Real-Time Stats -->
+                <div class="oversight-stats">
+                    <div class="oversight-stat" onclick="showDetail('budget')">
+                        <i class="fas fa-dollar-sign" style="font-size: 2.5rem; color: #667eea;"></i>
+                        <div class="big-number" style="color: #667eea;">$54M</div>
+                        <p style="font-weight: 600;">Total Budget (2025)</p>
+                        <p style="font-size: 0.9rem; color: #6c757d;">100% tracked in real-time</p>
+                    </div>
+                    <div class="oversight-stat" onclick="showDetail('contractors')">
+                        <i class="fas fa-building" style="font-size: 2.5rem; color: #28a745;"></i>
+                        <div class="big-number" style="color: #28a745;">23</div>
+                        <p style="font-weight: 600;">Active Contractors</p>
+                        <p style="font-size: 0.9rem; color: #6c757d;">All reporting in real-time</p>
+                    </div>
+                    <div class="oversight-stat" onclick="showDetail('clients')">
+                        <i class="fas fa-users" style="font-size: 2.5rem; color: #17a2b8;"></i>
+                        <div class="big-number" style="color: #17a2b8;">1,247</div>
+                        <p style="font-weight: 600;">Active Clients</p>
+                        <p style="font-size: 0.9rem; color: #6c757d;">Coordinated across all orgs</p>
+                    </div>
+                    <div class="oversight-stat" onclick="showDetail('housed')">
+                        <i class="fas fa-home" style="font-size: 2.5rem; color: #ffc107;"></i>
+                        <div class="big-number" style="color: #ffc107;">142</div>
+                        <p style="font-weight: 600;">Housed (YTD)</p>
+                        <p style="font-size: 0.9rem; color: #6c757d;">On track for 487 this year</p>
+                    </div>
+                </div>
+
+                <!-- Contractor Performance -->
+                <div style="padding: 40px; background: #f8f9fa;">
+                    <h2 style="margin-bottom: 30px; color: #333;">
+                        <i class="fas fa-chart-bar"></i> Contractor Performance & Accountability
+                    </h2>
+
+                    <div class="contractor-grid">
+                        <div class="contractor-card">
+                            <h4 style="color: #667eea; margin-bottom: 10px;">PATH (People Assisting The Homeless)</h4>
+                            <p style="color: #6c757d; font-size: 0.9rem; margin-bottom: 15px;">Contract: $8.2M • Case Management</p>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                                <div>
+                                    <p style="font-size: 0.85rem; color: #6c757d;">Clients Served</p>
+                                    <p style="font-size: 1.5rem; font-weight: 700; color: #667eea;">312</p>
+                                </div>
+                                <div>
+                                    <p style="font-size: 0.85rem; color: #6c757d;">Housed</p>
+                                    <p style="font-size: 1.5rem; font-weight: 700; color: #28a745;">47</p>
+                                </div>
+                            </div>
+                            <p style="font-size: 0.85rem; font-weight: 600; margin-bottom: 5px;">Performance: 94%</p>
+                            <div class="performance-bar">
+                                <div class="performance-fill" style="width: 94%;">94%</div>
+                            </div>
+                            <p style="font-size: 0.85rem; color: #28a745; margin-top: 10px;">
+                                ✅ Exceeding targets • Compliant
+                            </p>
+                        </div>
+
+                        <div class="contractor-card">
+                            <h4 style="color: #667eea; margin-bottom: 10px;">Long Beach Rescue Mission</h4>
+                            <p style="color: #6c757d; font-size: 0.9rem; margin-bottom: 15px;">Contract: $6.5M • Emergency Shelter</p>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                                <div>
+                                    <p style="font-size: 0.85rem; color: #6c757d;">Clients Served</p>
+                                    <p style="font-size: 1.5rem; font-weight: 700; color: #667eea;">428</p>
+                                </div>
+                                <div>
+                                    <p style="font-size: 0.85rem; color: #6c757d;">Housed</p>
+                                    <p style="font-size: 1.5rem; font-weight: 700; color: #28a745;">38</p>
+                                </div>
+                            </div>
+                            <p style="font-size: 0.85rem; font-weight: 600; margin-bottom: 5px;">Performance: 89%</p>
+                            <div class="performance-bar">
+                                <div class="performance-fill" style="width: 89%;">89%</div>
+                            </div>
+                            <p style="font-size: 0.85rem; color: #28a745; margin-top: 10px;">
+                                ✅ Meeting targets • Compliant
+                            </p>
+                        </div>
+
+                        <div class="contractor-card">
+                            <h4 style="color: #667eea; margin-bottom: 10px;">Community Health Alliance</h4>
+                            <p style="color: #6c757d; font-size: 0.9rem; margin-bottom: 15px;">Contract: $4.8M • Healthcare Services</p>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                                <div>
+                                    <p style="font-size: 0.85rem; color: #6c757d;">Clients Served</p>
+                                    <p style="font-size: 1.5rem; font-weight: 700; color: #667eea;">507</p>
+                                </div>
+                                <div>
+                                    <p style="font-size: 0.85rem; color: #6c757d;">Enrolled in Care</p>
+                                    <p style="font-size: 1.5rem; font-weight: 700; color: #28a745;">421</p>
+                                </div>
+                            </div>
+                            <p style="font-size: 0.85rem; font-weight: 600; margin-bottom: 5px;">Performance: 97%</p>
+                            <div class="performance-bar">
+                                <div class="performance-fill" style="width: 97%;">97%</div>
+                            </div>
+                            <p style="font-size: 0.85rem; color: #28a745; margin-top: 10px;">
+                                ✅ Exceeding targets • Compliant
+                            </p>
+                        </div>
+
+                        <div class="contractor-card">
+                            <h4 style="color: #667eea; margin-bottom: 10px;">WorkSource Long Beach</h4>
+                            <p style="color: #6c757d; font-size: 0.9rem; margin-bottom: 15px;">Contract: $3.2M • Employment Services</p>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                                <div>
+                                    <p style="font-size: 0.85rem; color: #6c757d;">Clients Served</p>
+                                    <p style="font-size: 1.5rem; font-weight: 700; color: #667eea;">289</p>
+                                </div>
+                                <div>
+                                    <p style="font-size: 0.85rem; color: #6c757d;">Employed</p>
+                                    <p style="font-size: 1.5rem; font-weight: 700; color: #28a745;">187</p>
+                                </div>
+                            </div>
+                            <p style="font-size: 0.85rem; font-weight: 600; margin-bottom: 5px;">Performance: 92%</p>
+                            <div class="performance-bar">
+                                <div class="performance-fill" style="width: 92%;">92%</div>
+                            </div>
+                            <p style="font-size: 0.85rem; color: #28a745; margin-top: 10px;">
+                                ✅ Exceeding targets • Compliant
+                            </p>
+                        </div>
+
+                        <div class="contractor-card" style="border-color: #ffc107;">
+                            <h4 style="color: #667eea; margin-bottom: 10px;">Transitional Living Services</h4>
+                            <p style="color: #6c757d; font-size: 0.9rem; margin-bottom: 15px;">Contract: $2.9M • Housing First</p>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                                <div>
+                                    <p style="font-size: 0.85rem; color: #6c757d;">Clients Served</p>
+                                    <p style="font-size: 1.5rem; font-weight: 700; color: #667eea;">156</p>
+                                </div>
+                                <div>
+                                    <p style="font-size: 0.85rem; color: #6c757d;">Housed</p>
+                                    <p style="font-size: 1.5rem; font-weight: 700; color: #ffc107;">18</p>
+                                </div>
+                            </div>
+                            <p style="font-size: 0.85rem; font-weight: 600; margin-bottom: 5px;">Performance: 73%</p>
+                            <div class="performance-bar">
+                                <div class="performance-fill medium" style="width: 73%;">73%</div>
+                            </div>
+                            <p style="font-size: 0.85rem; color: #856404; margin-top: 10px;">
+                                ⚠️ Below target • AI recommends resource allocation review
+                            </p>
+                        </div>
+
+                        <div class="contractor-card">
+                            <h4 style="color: #667eea; margin-bottom: 10px;">Mental Health America LB</h4>
+                            <p style="color: #6c757d; font-size: 0.9rem; margin-bottom: 15px;">Contract: $5.1M • Mental Health Services</p>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                                <div>
+                                    <p style="font-size: 0.85rem; color: #6c757d;">Clients Served</p>
+                                    <p style="font-size: 1.5rem; font-weight: 700; color: #667eea;">634</p>
+                                </div>
+                                <div>
+                                    <p style="font-size: 0.85rem; color: #6c757d;">In Treatment</p>
+                                    <p style="font-size: 1.5rem; font-weight: 700; color: #28a745;">589</p>
+                                </div>
+                            </div>
+                            <p style="font-size: 0.85rem; font-weight: 600; margin-bottom: 5px;">Performance: 96%</p>
+                            <div class="performance-bar">
+                                <div class="performance-fill" style="width: 96%;">96%</div>
+                            </div>
+                            <p style="font-size: 0.85rem; color: #28a745; margin-top: 10px;">
+                                ✅ Exceeding targets • Compliant
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Insights -->
+                <div style="padding: 40px; background: white;">
+                    <h2 style="margin-bottom: 30px; color: #333;">
+                        <i class="fas fa-brain"></i> AI-Powered Insights & Recommendations
+                    </h2>
+
+                    <div style="display: grid; gap: 20px;">
+                        <div style="background: #d4edda; border-left: 5px solid #28a745; padding: 25px; border-radius: 10px;">
+                            <h4 style="color: #155724; margin-bottom: 10px;">
+                                <i class="fas fa-check-circle"></i> Cross-Organization Coordination Success
+                            </h4>
+                            <p style="color: #155724;">
+                                AI has identified 47 clients receiving coordinated services from multiple contractors with zero duplication. Average time to permanent housing reduced by 34% through coordinated care plans.
+                            </p>
+                        </div>
+
+                        <div style="background: #fff3cd; border-left: 5px solid #ffc107; padding: 25px; border-radius: 10px;">
+                            <h4 style="color: #856404; margin-bottom: 10px;">
+                                <i class="fas fa-lightbulb"></i> Resource Optimization Opportunity
+                            </h4>
+                            <p style="color: #856404;">
+                                Predictive model shows reallocating $420K from underutilized transitional housing to rapid rehousing could house an additional 38 people this year. Recommend quarterly budget review.
+                            </p>
+                        </div>
+
+                        <div style="background: #d1ecf1; border-left: 5px solid #17a2b8; padding: 25px; border-radius: 10px;">
+                            <h4 style="color: #0c5460; margin-bottom: 10px;">
+                                <i class="fas fa-chart-line"></i> Outcome Prediction
+                            </h4>
+                            <p style="color: #0c5460;">
+                                Based on current trajectory and AI optimization, Long Beach is projected to house 487 people this year (up from 71 in 2024). This represents a 586% improvement in outcomes with the same budget.
+                            </p>
+                        </div>
+
+                        <div style="background: #e7f3ff; border-left: 5px solid #667eea; padding: 25px; border-radius: 10px;">
+                            <h4 style="color: #004085; margin-bottom: 10px;">
+                                <i class="fas fa-users"></i> Client Success Patterns
+                            </h4>
+                            <p style="color: #004085;">
+                                AI analysis shows clients receiving coordinated mental health + employment services have 78% higher permanent housing success rate. Recommend expanding integrated service model.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Real-Time Activity Feed -->
+                <div style="padding: 40px; background: #f8f9fa;">
+                    <h2 style="margin-bottom: 30px; color: #333;">
+                        <i class="fas fa-stream"></i> Real-Time Activity Feed
+                    </h2>
+
+                    <div style="background: white; border-radius: 15px; padding: 30px; border: 2px solid #e9ecef;">
+                        <div style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #e9ecef;">
+                            <p style="color: #6c757d; font-size: 0.85rem; margin-bottom: 5px;">2 minutes ago</p>
+                            <p><strong>PATH</strong> enrolled new client in case management program</p>
+                            <p style="color: #28a745; font-size: 0.9rem; margin-top: 5px;">✓ Compliance report auto-generated</p>
+                        </div>
+
+                        <div style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #e9ecef;">
+                            <p style="color: #6c757d; font-size: 0.85rem; margin-bottom: 5px;">5 minutes ago</p>
+                            <p><strong>Mental Health America LB</strong> completed intake for Marcus Williams</p>
+                            <p style="color: #667eea; font-size: 0.9rem; margin-top: 5px;">🤖 AI generated coordinated care plan</p>
+                        </div>
+
+                        <div style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #e9ecef;">
+                            <p style="color: #6c757d; font-size: 0.85rem; margin-bottom: 5px;">12 minutes ago</p>
+                            <p><strong>WorkSource Long Beach</strong> placed client in full-time employment</p>
+                            <p style="color: #28a745; font-size: 0.9rem; margin-top: 5px;">✓ Outcome tracked • Housing stability score updated</p>
+                        </div>
+
+                        <div style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #e9ecef;">
+                            <p style="color: #6c757d; font-size: 0.85rem; margin-bottom: 5px;">18 minutes ago</p>
+                            <p><strong>Long Beach Rescue Mission</strong> transitioned client to permanent housing</p>
+                            <p style="color: #28a745; font-size: 0.9rem; margin-top: 5px;">✓ Budget impact: $110,884 • ROI positive</p>
+                        </div>
+
+                        <div>
+                            <p style="color: #6c757d; font-size: 0.85rem; margin-bottom: 5px;">25 minutes ago</p>
+                            <p><strong>Community Health Alliance</strong> enrolled 3 clients in healthcare programs</p>
+                            <p style="color: #28a745; font-size: 0.9rem; margin-top: 5px;">✓ Cross-org coordination with PATH established</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart -->
+                <div class="chart-container">
+                    <h2 style="margin-bottom: 30px; color: #333; text-align: center;">
+                        <i class="fas fa-chart-area"></i> Monthly Housing Outcomes: 2024 vs 2025
+                    </h2>
+                    <div class="chart-wrapper">
+                        <canvas id="outcomeChart"></canvas>
+                    </div>
+                </div>
+
+                <div style="padding: 40px; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <h2 style="margin-bottom: 20px; font-size: 2.5rem;">
+                        <i class="fas fa-trophy"></i> Results Speak For Themselves
+                    </h2>
+                    <p style="font-size: 1.3rem; margin-bottom: 30px;">
+                        Same budget. Radical transparency. AI-powered coordination. <strong>586% better outcomes.</strong>
+                    </p>
+                    <p style="font-size: 1.1rem; opacity: 0.95;">
+                        This is what accountability looks like.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Panel -->
+    <div id="notification-panel" class="notification-panel">
+        <div class="notification-header">
+            <h3><i class="fas fa-bell"></i> Notifications</h3>
+            <button class="close-btn" onclick="toggleNotifications()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="notification-item unread" onclick="showNewClient()">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                <div>
+                    <h4 style="color: #667eea; margin-bottom: 5px;">
+                        <i class="fas fa-user-plus"></i> New Client Onboarded
+                    </h4>
+                    <p style="font-size: 0.85rem; color: #6c757d;">Just now</p>
+                </div>
+                <span style="background: #dc3545; color: white; padding: 3px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 700;">NEW</span>
+            </div>
+            <p><strong>Marcus Williams</strong> completed intake</p>
+            <p style="font-size: 0.9rem; color: #6c757d; margin-top: 5px;">
+                AI has generated an action plan. Click to review.
+            </p>
+        </div>
+
+        <div class="notification-item unread" onclick="showComplianceReport()">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                <div>
+                    <h4 style="color: #28a745; margin-bottom: 5px;">
+                        <i class="fas fa-file-alt"></i> Compliance Report Ready
+                    </h4>
+                    <p style="font-size: 0.85rem; color: #6c757d;">5 minutes ago</p>
+                </div>
+            </div>
+            <p>Weekly HUD/HMIS compliance report generated</p>
+            <p style="font-size: 0.9rem; color: #6c757d; margin-top: 5px;">
+                Click to review and send to city oversight
+            </p>
+        </div>
+
+        <div class="notification-item" style="opacity: 0.7;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                <div>
+                    <h4 style="color: #6c757d; margin-bottom: 5px;">
+                        <i class="fas fa-check-circle"></i> Case Update
+                    </h4>
+                    <p style="font-size: 0.85rem; color: #6c757d;">1 hour ago</p>
+                </div>
+            </div>
+            <p>Sarah Johnson successfully placed in permanent housing</p>
+        </div>
+    </div>
+
+    <!-- Client Detail Modal -->
+    <div id="client-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-user"></i> Marcus Williams - New Client</h2>
+                <button class="close-btn" onclick="closeModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Client Summary -->
+                <div style="background: #f8f9fa; padding: 25px; border-radius: 15px; margin-bottom: 30px;">
+                    <h3 style="margin-bottom: 15px;">Client Summary</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                        <div>
+                            <p style="color: #6c757d; font-size: 0.9rem;">Age</p>
+                            <p style="font-weight: 700;">37 years old</p>
+                        </div>
+                        <div>
+                            <p style="color: #6c757d; font-size: 0.9rem;">Status</p>
+                            <p style="font-weight: 700; color: #ffc107;">Housing Unstable</p>
+                        </div>
+                        <div>
+                            <p style="color: #6c757d; font-size: 0.9rem;">Employment</p>
+                            <p style="font-weight: 700; color: #dc3545;">Recently Unemployed</p>
+                        </div>
+                        <div>
+                            <p style="color: #6c757d; font-size: 0.9rem;">Contact</p>
+                            <p style="font-weight: 700;">(562) 555-0142</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI-Generated Action Plan -->
+                <div class="ai-action-plan">
+                    <h3 style="color: #667eea; margin-bottom: 20px;">
+                        <i class="fas fa-robot"></i> AI-Generated Action Plan
+                    </h3>
+                    <p style="margin-bottom: 20px; font-weight: 600;">
+                        Based on Marcus's intake assessment, our AI has identified the following priorities and matched him with optimal resources:
+                    </p>
+
+                    <div class="action-item">
+                        <h4><i class="fas fa-home"></i> Priority 1: Emergency Housing (URGENT)</h4>
+                        <p style="margin-bottom: 10px;">
+                            <strong>AI Assessment:</strong> High risk of homelessness within 7 days. Current couch-surfing situation is unstable.
+                        </p>
+                        <p style="margin-bottom: 10px;">
+                            <strong>Recommended Program:</strong> Long Beach Emergency Housing Assistance Program
+                        </p>
+                        <ul style="margin-left: 20px; margin-top: 10px;">
+                            <li>Provides up to 6 months rental assistance</li>
+                            <li>Marcus is pre-qualified based on intake data</li>
+                            <li>Application auto-drafted and ready for review</li>
+                        </ul>
+                        <p style="background: #d4edda; padding: 10px; border-radius: 5px; margin-top: 10px; color: #155724;">
+                            <strong>First Appointment:</strong> Schedule housing assessment within 48 hours
+                        </p>
+                    </div>
+
+                    <div class="action-item">
+                        <h4><i class="fas fa-heartbeat"></i> Priority 2: Healthcare & Medication</h4>
+                        <p style="margin-bottom: 10px;">
+                            <strong>AI Assessment:</strong> Type 2 Diabetes with medication running low. No current insurance.
+                        </p>
+                        <p style="margin-bottom: 10px;">
+                            <strong>Recommended Actions:</strong>
+                        </p>
+                        <ul style="margin-left: 20px; margin-top: 10px;">
+                            <li>Expedited Medi-Cal enrollment (already contacted by AI)</li>
+                            <li>Referral to Community Health Alliance for immediate care</li>
+                            <li>Emergency medication assistance through LA County program</li>
+                        </ul>
+                        <p style="background: #d4edda; padding: 10px; border-radius: 5px; margin-top: 10px; color: #155724;">
+                            <strong>First Appointment:</strong> Medical intake scheduled for tomorrow 2PM
+                        </p>
+                    </div>
+
+                    <div class="action-item">
+                        <h4><i class="fas fa-brain"></i> Priority 3: Mental Health Support</h4>
+                        <p style="margin-bottom: 10px;">
+                            <strong>AI Assessment:</strong> Self-reported anxiety and depression. Stress indicators high due to housing/employment instability.
+                        </p>
+                        <p style="margin-bottom: 10px;">
+                            <strong>Recommended Program:</strong> Mental Health America Long Beach counseling services
+                        </p>
+                        <ul style="margin-left: 20px; margin-top: 10px;">
+                            <li>Free counseling services available</li>
+                            <li>Crisis support available 24/7</li>
+                            <li>Integrated with overall care plan</li>
+                        </ul>
+                        <p style="background: #d4edda; padding: 10px; border-radius: 5px; margin-top: 10px; color: #155724;">
+                            <strong>First Appointment:</strong> Ready to schedule after initial call
+                        </p>
+                    </div>
+
+                    <div class="action-item">
+                        <h4><i class="fas fa-briefcase"></i> Priority 4: Employment Services</h4>
+                        <p style="margin-bottom: 10px;">
+                            <strong>AI Assessment:</strong> Strong work history (warehouse associate). Good candidate for rapid reemployment.
+                        </p>
+                        <p style="margin-bottom: 10px;">
+                            <strong>Recommended Program:</strong> WorkSource Long Beach
+                        </p>
+                        <ul style="margin-left: 20px; margin-top: 10px;">
+                            <li>Resume building and job placement services</li>
+                            <li>3 warehouse positions currently available in Long Beach</li>
+                            <li>Transportation assistance available during job search</li>
+                        </ul>
+                        <p style="background: #d4edda; padding: 10px; border-radius: 5px; margin-top: 10px; color: #155724;">
+                            <strong>First Appointment:</strong> Employment counseling scheduled for Friday 10AM
+                        </p>
+                    </div>
+
+                    <div class="action-item">
+                        <h4><i class="fas fa-utensils"></i> Priority 5: Immediate Needs</h4>
+                        <p style="margin-bottom: 10px;">
+                            <strong>Recommended Resources:</strong>
+                        </p>
+                        <ul style="margin-left: 20px;">
+                            <li>Food bank referral for immediate food assistance</li>
+                            <li>CalFresh enrollment assistance (AI pre-filled application)</li>
+                            <li>Metro bus pass for transportation to appointments</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- AI Insights -->
+                <div style="background: #e7f3ff; border-left: 5px solid #667eea; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                    <h4 style="color: #004085; margin-bottom: 10px;">
+                        <i class="fas fa-lightbulb"></i> AI Insights & Predictions
+                    </h4>
+                    <ul style="margin-left: 20px; color: #004085;">
+                        <li>Success probability: <strong>82%</strong> based on profile analysis</li>
+                        <li>Estimated time to housing stability: <strong>3-4 months</strong> with coordinated services</li>
+                        <li>Crisis risk: <strong>Low</strong> if housing secured within 7 days</li>
+                        <li>Similar client success rate: <strong>89%</strong> with this action plan model</li>
+                    </ul>
+                </div>
+
+                <!-- Coordinated Appointments -->
+                <div style="background: white; border: 2px solid #667eea; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <h4 style="color: #667eea; margin-bottom: 15px;">
+                        <i class="fas fa-calendar-check"></i> Pre-Scheduled Appointments (Ready to Confirm)
+                    </h4>
+                    <div style="margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                        <p style="font-weight: 700; margin-bottom: 5px;">Tomorrow • 2:00 PM</p>
+                        <p>Community Health Alliance - Medical Intake & Medication</p>
+                        <p style="font-size: 0.9rem; color: #6c757d; margin-top: 5px;">📍 1234 Long Beach Blvd</p>
+                    </div>
+                    <div style="margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                        <p style="font-weight: 700; margin-bottom: 5px;">Thursday • 10:00 AM</p>
+                        <p>Housing Authority - Emergency Housing Assessment</p>
+                        <p style="font-size: 0.9rem; color: #6c757d; margin-top: 5px;">📍 City Hall, Room 304</p>
+                    </div>
+                    <div style="padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                        <p style="font-weight: 700; margin-bottom: 5px;">Friday • 10:00 AM</p>
+                        <p>WorkSource Long Beach - Employment Counseling</p>
+                        <p style="font-size: 0.9rem; color: #6c757d; margin-top: 5px;">📍 3599 E Pacific Coast Hwy</p>
+                    </div>
+                </div>
+
+                <button class="confirm-btn" onclick="confirmActionPlan()">
+                    <i class="fas fa-check-circle"></i> Confirm Action Plan & Schedule Appointments
+                </button>
+
+                <p style="text-align: center; margin-top: 15px; color: #6c757d; font-size: 0.9rem;">
+                    Marcus will receive automated SMS confirmations with appointment details
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Compliance Report Modal -->
+    <div id="compliance-modal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                <h2><i class="fas fa-file-alt"></i> Compliance Report</h2>
+                <button class="close-btn" onclick="closeComplianceModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <div style="width: 100px; height: 100px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 3rem; color: white;">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h3 style="color: #28a745; margin-bottom: 10px;">All Compliance Requirements Met</h3>
+                    <p style="color: #6c757d;">Weekly report period: Nov 7-14, 2025</p>
+                </div>
+
+                <div style="background: #f8f9fa; padding: 25px; border-radius: 15px; margin-bottom: 20px;">
+                    <h4 style="margin-bottom: 15px;">Report Summary</h4>
+                    <ul style="list-style: none;">
+                        <li style="margin-bottom: 12px; padding-left: 25px; position: relative;">
+                            <i class="fas fa-check-circle" style="position: absolute; left: 0; color: #28a745;"></i>
+                            <strong>HUD/HMIS Compliance:</strong> 100% data completeness
+                        </li>
+                        <li style="margin-bottom: 12px; padding-left: 25px; position: relative;">
+                            <i class="fas fa-check-circle" style="position: absolute; left: 0; color: #28a745;"></i>
+                            <strong>HIPAA Protection:</strong> All PHI secured, no violations
+                        </li>
+                        <li style="margin-bottom: 12px; padding-left: 25px; position: relative;">
+                            <i class="fas fa-check-circle" style="position: absolute; left: 0; color: #28a745;"></i>
+                            <strong>Client Consent:</strong> 100% signed and documented
+                        </li>
+                        <li style="margin-bottom: 12px; padding-left: 25px; position: relative;">
+                            <i class="fas fa-check-circle" style="position: absolute; left: 0; color: #28a745;"></i>
+                            <strong>Data Quality:</strong> 98% accuracy score
+                        </li>
+                        <li style="padding-left: 25px; position: relative;">
+                            <i class="fas fa-check-circle" style="position: absolute; left: 0; color: #28a745;"></i>
+                            <strong>Audit Trail:</strong> Complete documentation for all cases
+                        </li>
+                    </ul>
+                </div>
+
+                <div style="background: #d4edda; padding: 20px; border-radius: 10px; border-left: 5px solid #28a745; margin-bottom: 20px;">
+                    <p style="color: #155724; font-weight: 600;">
+                        <i class="fas fa-robot"></i> AI-Generated Report
+                    </p>
+                    <p style="color: #155724; margin-top: 10px; font-size: 0.95rem;">
+                        This compliance report was automatically generated by the AI system. All required fields have been validated, and the report is ready to send to city oversight.
+                    </p>
+                </div>
+
+                <button class="confirm-btn" onclick="sendComplianceReport()">
+                    <i class="fas fa-paper-plane"></i> Send to City Oversight
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // View Management
+        function showView(viewId) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+        }
+
+        function startOnboarding() {
+            showView('onboarding-view');
+            window.scrollTo(0, 0);
+        }
+
+        function submitIntake(event) {
+            event.preventDefault();
+            showView('success-view');
+            window.scrollTo(0, 0);
+
+            // Play notification sound after a delay
+            setTimeout(() => {
+                playNotification();
+            }, 3000);
+        }
+
+        function playNotification() {
+            // Create a more noticeable notification sound using Web Audio API
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+
+            // Make bell shake
+            const bell = document.querySelector('.notification-bell');
+            bell.classList.add('shake');
+            setTimeout(() => bell.classList.remove('shake'), 500);
+        }
+
+        function showCaseworkerDashboard() {
+            showView('caseworker-view');
+            window.scrollTo(0, 0);
+        }
+
+        // Notification Panel
+        function toggleNotifications() {
+            document.getElementById('notification-panel').classList.toggle('open');
+        }
+
+        function showNewClient() {
+            document.getElementById('client-modal').classList.add('active');
+            toggleNotifications();
+        }
+
+        function closeModal() {
+            document.getElementById('client-modal').classList.remove('active');
+        }
+
+        function confirmActionPlan() {
+            alert('✅ Action Plan Confirmed!\n\nAll appointments have been scheduled and Marcus has been sent:\n• SMS confirmations for all 3 appointments\n• Digital resource guide\n• Emergency contact information\n• Transit passes for appointments\n\nCompliance documentation auto-generated and logged.');
+
+            // Update notification badge
+            document.getElementById('notification-count').textContent = '2';
+
+            closeModal();
+        }
+
+        function showComplianceReport() {
+            document.getElementById('compliance-modal').classList.add('active');
+            toggleNotifications();
+        }
+
+        function closeComplianceModal() {
+            document.getElementById('compliance-modal').classList.remove('active');
+        }
+
+        function sendComplianceReport() {
+            alert('✅ Compliance Report Sent!\n\nThe weekly compliance report has been transmitted to:\n• City Oversight Dashboard\n• HUD/HMIS Database\n• Long Beach City Manager\n\nAll stakeholders have been notified.');
+
+            // Update notification badge
+            document.getElementById('notification-count').textContent = '1';
+
+            closeComplianceModal();
+
+            // Show prompt to view city dashboard
+            setTimeout(() => {
+                if (confirm('Would you like to view the City Oversight Dashboard?\n\nThis is where city officials can see real-time accountability and performance tracking.')) {
+                    showView('oversight-view');
+                    window.scrollTo(0, 0);
+                    initChart();
+                }
+            }, 500);
+        }
+
+        function showDetail(type) {
+            const messages = {
+                budget: 'Budget Breakdown:\n\n• Case Management: $18.2M\n• Emergency Shelter: $12.5M\n• Healthcare Services: $8.9M\n• Employment Programs: $7.1M\n• Mental Health: $5.1M\n• Other Services: $2.2M\n\nAll expenditures tracked in real-time with full transparency.',
+                contractors: 'Active Contractors (23):\n\nAll contractors report data in real-time through the First Contact EIS system. Performance metrics, client outcomes, and budget utilization are tracked automatically.\n\nClick on any contractor card below to see detailed performance data.',
+                clients: 'Active Clients (1,247):\n\n• In Emergency Shelter: 423\n• In Transitional Housing: 312\n• Receiving Case Management: 867\n• Employed or in Job Training: 289\n• Receiving Healthcare: 634\n\nAll client data coordinated across organizations to prevent duplication and maximize effectiveness.',
+                housed: 'Housing Outcomes:\n\n• YTD Housed: 142 people\n• Current Monthly Rate: 41 people/month\n• Projected Annual Total: 487 people\n\n2024 Comparison: 71 people housed\nImprovement: 586% increase in outcomes'
+            };
+
+            alert(messages[type]);
+        }
+
+        // Chart initialization
+        function initChart() {
+            const ctx = document.getElementById('outcomeChart');
+            if (!ctx || ctx.chart) return; // Prevent duplicate charts
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    datasets: [
+                        {
+                            label: '2024 (Old System)',
+                            data: [4, 5, 6, 7, 5, 8, 6, 7, 5, 6, 8, 4],
+                            borderColor: '#dc3545',
+                            backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: '2025 (First Contact EIS)',
+                            data: [12, 18, 25, 32, 35, 38, 41, 43, 45, 42, 41, 43],
+                            borderColor: '#28a745',
+                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'People Permanently Housed'
+                            }
+                        }
+                    }
+                }
+            });
+
+            ctx.chart = true; // Mark as initialized
+        }
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            console.log('%c🚀 First Contact EIS Live Demo Ready!', 'color: #667eea; font-size: 20px; font-weight: bold;');
+            console.log('%c📱 Scan QR or click Start Onboarding to begin the workflow', 'color: #28a745; font-size: 14px;');
+        });
+    </script>
+</body>
+</html>
