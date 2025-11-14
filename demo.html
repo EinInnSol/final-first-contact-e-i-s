@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>First Contact EIS - Interactive Demo | AI-Enhanced Civic Services</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 60px 20px;
+            color: white;
+            animation: fadeIn 1s ease-in;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .hero .tagline {
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+            opacity: 0.95;
+        }
+
+        .badges {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin: 30px 0;
+        }
+
+        .badge {
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Main Demo Container */
+        .demo-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            margin-top: 30px;
+            animation: slideUp 0.8s ease-out;
+        }
+
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 3px solid #e9ecef;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            flex: 1;
+            min-width: 150px;
+            padding: 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #6c757d;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .tab-btn:hover {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+        }
+
+        .tab-btn.active {
+            color: #667eea;
+            background: white;
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #667eea;
+        }
+
+        .tab-btn i {
+            margin-right: 8px;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            padding: 40px;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+            border-color: #667eea;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #667eea;
+            margin: 10px 0;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        /* AI Chat Interface */
+        .ai-chat {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 25px;
+            color: white;
+            margin-top: 20px;
+        }
+
+        .chat-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .ai-avatar {
+            width: 50px;
+            height: 50px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .chat-messages {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            animation: messageSlide 0.3s ease-out;
+        }
+
+        .message.ai {
+            background: rgba(255,255,255,0.15);
+            padding: 15px;
+            border-radius: 15px 15px 15px 0;
+        }
+
+        .message.user {
+            background: rgba(255,255,255,0.25);
+            padding: 15px;
+            border-radius: 15px 15px 0 15px;
+            margin-left: 50px;
+        }
+
+        .chat-input-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .chat-input::placeholder {
+            color: rgba(255,255,255,0.7);
+        }
+
+        .send-btn {
+            padding: 15px 30px;
+            background: white;
+            color: #667eea;
+            border: none;
+            border-radius: 25px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(255,255,255,0.3);
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #e9ecef;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 1s ease;
+            animation: pulse 2s infinite;
+        }
+
+        /* Alert Box */
+        .alert {
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 5px solid #28a745;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 5px solid #ffc107;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 5px solid #dc3545;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 5px solid #17a2b8;
+        }
+
+        /* Button Styles */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        /* List Styles */
+        .case-list {
+            list-style: none;
+        }
+
+        .case-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .case-item:hover {
+            background: white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transform: translateX(5px);
+        }
+
+        .case-priority {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-left: 10px;
+        }
+
+        .priority-high {
+            background: #dc3545;
+            color: white;
+        }
+
+        .priority-medium {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .priority-low {
+            background: #28a745;
+            color: white;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes messageSlide {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.8;
+            }
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .hero .tagline {
+                font-size: 1.2rem;
+            }
+
+            .tab-btn {
+                font-size: 0.9rem;
+                padding: 15px 10px;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Color Schemes for Different Portals */
+        .client-theme { --primary-color: #667eea; }
+        .caseworker-theme { --primary-color: #f093fb; }
+        .city-theme { --primary-color: #4facfe; }
+        .kiosk-theme { --primary-color: #43e97b; }
+        .admin-theme { --primary-color: #fa709a; }
+
+        /* Crisis Button */
+        .crisis-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 70px;
+            height: 70px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(220, 53, 69, 0.5);
+            animation: pulse 2s infinite;
+            z-index: 1000;
+        }
+
+        .crisis-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* Features Grid */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .feature-card {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.2);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Crisis Support Button -->
+    <button class="crisis-btn" onclick="showCrisisSupport()" title="Emergency Support">
+        <i class="fas fa-exclamation-triangle"></i>
+    </button>
+
+    <!-- Hero Section -->
+    <div class="hero">
+        <div class="container">
+            <h1><i class="fas fa-brain"></i> First Contact EIS</h1>
+            <p class="tagline">AI-Enhanced Human-in-the-Loop Civic Services Platform</p>
+            <p>The Most Advanced Civic AI System for Long Beach's $75K Pilot Program</p>
+
+            <div class="badges">
+                <span class="badge"><i class="fas fa-robot"></i> AI-Powered</span>
+                <span class="badge"><i class="fas fa-users"></i> Human-in-the-Loop</span>
+                <span class="badge"><i class="fas fa-shield-alt"></i> HIPAA Compliant</span>
+                <span class="badge"><i class="fas fa-universal-access"></i> WCAG 2.1 AA</span>
+                <span class="badge"><i class="fas fa-language"></i> Multi-Language</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Demo Container -->
+    <div class="container">
+        <div class="demo-container">
+            <!-- Tab Navigation -->
+            <div class="tab-nav">
+                <button class="tab-btn active" onclick="switchTab('client')">
+                    <i class="fas fa-user"></i> Client Portal
+                </button>
+                <button class="tab-btn" onclick="switchTab('caseworker')">
+                    <i class="fas fa-briefcase"></i> Caseworker
+                </button>
+                <button class="tab-btn" onclick="switchTab('city')">
+                    <i class="fas fa-chart-line"></i> City Analytics
+                </button>
+                <button class="tab-btn" onclick="switchTab('kiosk')">
+                    <i class="fas fa-desktop"></i> Kiosk
+                </button>
+                <button class="tab-btn" onclick="switchTab('admin')">
+                    <i class="fas fa-cog"></i> Admin
+                </button>
+            </div>
+
+            <!-- Client Portal Tab -->
+            <div id="client" class="tab-content active">
+                <h2><i class="fas fa-user-circle"></i> Client Portal - AI Concierge</h2>
+                <p style="margin-bottom: 20px; color: #6c757d;">24/7 personalized AI assistance for clients seeking services</p>
+
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">My Services</div>
+                            <div class="card-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                                <i class="fas fa-clipboard-list"></i>
+                            </div>
+                        </div>
+                        <div class="stat-number">3</div>
+                        <div class="stat-label">Active Services</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 75%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Next Appointment</div>
+                            <div class="card-icon" style="background: #28a745; color: white;">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                        </div>
+                        <div style="font-size: 1.2rem; font-weight: 700; color: #333; margin: 10px 0;">Tomorrow</div>
+                        <div class="stat-label">Case Manager Meeting - 2:00 PM</div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">AI Assistance</div>
+                            <div class="card-icon" style="background: #17a2b8; color: white;">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                        </div>
+                        <div style="font-size: 1.2rem; font-weight: 700; color: #333; margin: 10px 0;">Available 24/7</div>
+                        <div class="stat-label">Instant responses in 5 languages</div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle" style="font-size: 1.5rem;"></i>
+                    <div>
+                        <strong>AI Suggestion:</strong> Based on your profile, you may be eligible for additional housing assistance programs. Would you like to explore these options?
+                    </div>
+                </div>
+
+                <!-- AI Chat -->
+                <div class="ai-chat">
+                    <div class="chat-header">
+                        <div class="ai-avatar">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <div>
+                            <h3 style="margin: 0;">AI Concierge - Maria</h3>
+                            <p style="margin: 0; opacity: 0.8; font-size: 0.9rem;">Available 24/7 in English, Spanish, Khmer, Tagalog, Korean</p>
+                        </div>
+                    </div>
+
+                    <div class="chat-messages" id="client-chat">
+                        <div class="message ai">
+                            <strong>AI Concierge:</strong> Hello! I'm Maria, your personal AI assistant. I'm here to help you navigate services, answer questions, and provide support anytime you need it. How can I help you today?
+                        </div>
+                    </div>
+
+                    <div class="chat-input-container">
+                        <input type="text" class="chat-input" id="client-input" placeholder="Ask me anything... (Try: 'I need help with housing')" onkeypress="handleEnter(event, 'client')">
+                        <button class="send-btn" onclick="sendMessage('client')">
+                            <i class="fas fa-paper-plane"></i> Send
+                        </button>
+                    </div>
+                </div>
+
+                <div class="quick-actions">
+                    <button class="btn btn-primary" onclick="simulateClientAction('housing')">
+                        <i class="fas fa-home"></i> Find Housing Resources
+                    </button>
+                    <button class="btn btn-primary" onclick="simulateClientAction('appointment')">
+                        <i class="fas fa-calendar"></i> Schedule Appointment
+                    </button>
+                    <button class="btn btn-primary" onclick="simulateClientAction('documents')">
+                        <i class="fas fa-file-alt"></i> Upload Documents
+                    </button>
+                </div>
+            </div>
+
+            <!-- Caseworker Dashboard Tab -->
+            <div id="caseworker" class="tab-content">
+                <h2><i class="fas fa-briefcase"></i> Caseworker Dashboard - AI-Enhanced Case Management</h2>
+                <p style="margin-bottom: 20px; color: #6c757d;">AI-powered tools to amplify caseworker effectiveness</p>
+
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">My Caseload</div>
+                            <div class="card-icon" style="background: #f093fb; color: white;">
+                                <i class="fas fa-users"></i>
+                            </div>
+                        </div>
+                        <div class="stat-number">24</div>
+                        <div class="stat-label">Active Cases</div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">AI Alerts</div>
+                            <div class="card-icon" style="background: #ffc107; color: white;">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                        </div>
+                        <div class="stat-number">3</div>
+                        <div class="stat-label">High Priority Cases</div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Success Rate</div>
+                            <div class="card-icon" style="background: #28a745; color: white;">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                        </div>
+                        <div class="stat-number">94%</div>
+                        <div class="stat-label">With AI Assistance (+12%)</div>
+                    </div>
+                </div>
+
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 1.5rem;"></i>
+                    <div>
+                        <strong>AI Crisis Alert:</strong> Client "Sarah M." shows 78% probability of crisis within 72 hours. Recommended action: Schedule urgent check-in.
+                        <br><button class="btn btn-danger" style="margin-top: 10px;" onclick="handleCrisisAlert()">
+                            <i class="fas fa-phone"></i> Contact Now
+                        </button>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 30px;">Priority Cases - AI Ranked</h3>
+                <ul class="case-list">
+                    <li class="case-item" onclick="openCase(1)">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>Sarah M.</strong> <span class="case-priority priority-high">HIGH PRIORITY</span>
+                                <br><small>Housing crisis risk • Last contact: 5 days ago</small>
+                                <br><small style="color: #667eea;"><i class="fas fa-brain"></i> AI Confidence: 78% crisis probability</small>
+                            </div>
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </li>
+                    <li class="case-item" onclick="openCase(2)">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>John D.</strong> <span class="case-priority priority-medium">MEDIUM</span>
+                                <br><small>Follow-up needed • Employment support</small>
+                                <br><small style="color: #667eea;"><i class="fas fa-brain"></i> AI Recommendation: Job training program match found</small>
+                            </div>
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </li>
+                    <li class="case-item" onclick="openCase(3)">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>Maria R.</strong> <span class="case-priority priority-low">ON TRACK</span>
+                                <br><small>Progress excellent • Next check-in: 2 weeks</small>
+                                <br><small style="color: #28a745;"><i class="fas fa-check-circle"></i> AI Assessment: High success probability</small>
+                            </div>
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </li>
+                </ul>
+
+                <div class="ai-chat" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <div class="chat-header">
+                        <div class="ai-avatar">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                        <div>
+                            <h3 style="margin: 0;">AI Case Assistant - Alex</h3>
+                            <p style="margin: 0; opacity: 0.8; font-size: 0.9rem;">Real-time decision support & suggestions</p>
+                        </div>
+                    </div>
+
+                    <div class="chat-messages" id="caseworker-chat">
+                        <div class="message ai">
+                            <strong>AI Assistant:</strong> Based on analysis of your current caseload, I recommend prioritizing Sarah M.'s case today. Her communication patterns suggest increased stress levels. Would you like me to draft an outreach message?
+                        </div>
+                    </div>
+
+                    <div class="chat-input-container">
+                        <input type="text" class="chat-input" id="caseworker-input" placeholder="Ask for case recommendations, draft messages, or get insights..." onkeypress="handleEnter(event, 'caseworker')">
+                        <button class="send-btn" onclick="sendMessage('caseworker')">
+                            <i class="fas fa-paper-plane"></i> Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- City Analytics Tab -->
+            <div id="city" class="tab-content">
+                <h2><i class="fas fa-city"></i> City Analytics - AI Municipal Intelligence</h2>
+                <p style="margin-bottom: 20px; color: #6c757d;">Predictive governance and population-level insights</p>
+
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Active Cases</div>
+                            <div class="card-icon" style="background: #4facfe; color: white;">
+                                <i class="fas fa-users"></i>
+                            </div>
+                        </div>
+                        <div class="stat-number">1,247</div>
+                        <div class="stat-label">Across Long Beach</div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Crisis Prevention</div>
+                            <div class="card-icon" style="background: #28a745; color: white;">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                        </div>
+                        <div class="stat-number">89%</div>
+                        <div class="stat-label">Prevented with AI (+34%)</div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Resource Efficiency</div>
+                            <div class="card-icon" style="background: #667eea; color: white;">
+                                <i class="fas fa-dollar-sign"></i>
+                            </div>
+                        </div>
+                        <div class="stat-number">$2.4M</div>
+                        <div class="stat-label">Saved This Year</div>
+                    </div>
+                </div>
+
+                <div class="alert alert-success">
+                    <i class="fas fa-lightbulb" style="font-size: 1.5rem;"></i>
+                    <div>
+                        <strong>AI Insight:</strong> Predictive model shows 23% decrease in emergency shelter demand over next quarter if current preventive programs continue. Recommend maintaining funding.
+                    </div>
+                </div>
+
+                <h3>AI-Powered Insights</h3>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-chart-area"></i></div>
+                        <h4>Demand Forecasting</h4>
+                        <p>AI predicts service demand 90 days ahead with 92% accuracy</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-balance-scale"></i></div>
+                        <h4>Equity Analysis</h4>
+                        <p>Real-time monitoring ensures fair service distribution</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-sitemap"></i></div>
+                        <h4>Resource Optimization</h4>
+                        <p>AI maximizes impact of every dollar spent</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-flag"></i></div>
+                        <h4>Policy Impact</h4>
+                        <p>Simulate outcomes before implementation</p>
+                    </div>
+                </div>
+
+                <div class="ai-chat" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                    <div class="chat-header">
+                        <div class="ai-avatar">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div>
+                            <h3 style="margin: 0;">AI Analytics Assistant - Taylor</h3>
+                            <p style="margin: 0; opacity: 0.8; font-size: 0.9rem;">Population insights & predictive governance</p>
+                        </div>
+                    </div>
+
+                    <div class="chat-messages" id="city-chat">
+                        <div class="message ai">
+                            <strong>AI Analytics:</strong> Good morning! The latest predictive models show a 15% increase in housing support requests expected in District 3 next month. I can provide detailed demographic breakdown and resource allocation recommendations. What would you like to explore?
+                        </div>
+                    </div>
+
+                    <div class="chat-input-container">
+                        <input type="text" class="chat-input" id="city-input" placeholder="Ask about trends, predictions, or policy impacts..." onkeypress="handleEnter(event, 'city')">
+                        <button class="send-btn" onclick="sendMessage('city')">
+                            <i class="fas fa-paper-plane"></i> Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kiosk Tab -->
+            <div id="kiosk" class="tab-content">
+                <h2><i class="fas fa-desktop"></i> Kiosk Interface - AI-Adaptive Public Access</h2>
+                <p style="margin-bottom: 20px; color: #6c757d;">Intelligent, accessible self-service for all community members</p>
+
+                <div class="alert alert-info">
+                    <i class="fas fa-universal-access" style="font-size: 1.5rem;"></i>
+                    <div>
+                        <strong>Accessibility Mode Active:</strong> AI has detected you may need larger text and high contrast. Interface adjusted automatically.
+                    </div>
+                </div>
+
+                <div class="features-grid">
+                    <div class="feature-card" style="cursor: pointer;" onclick="kioskAction('voice')">
+                        <div class="feature-icon"><i class="fas fa-microphone"></i></div>
+                        <h4>Voice Control</h4>
+                        <p>Speak in your preferred language</p>
+                        <button class="btn btn-primary" style="margin-top: 10px;">Activate</button>
+                    </div>
+                    <div class="feature-card" style="cursor: pointer;" onclick="kioskAction('services')">
+                        <div class="feature-icon"><i class="fas fa-concierge-bell"></i></div>
+                        <h4>Find Services</h4>
+                        <p>AI-powered service matching</p>
+                        <button class="btn btn-primary" style="margin-top: 10px;">Search</button>
+                    </div>
+                    <div class="feature-card" style="cursor: pointer;" onclick="kioskAction('appointments')">
+                        <div class="feature-icon"><i class="fas fa-calendar-alt"></i></div>
+                        <h4>Book Appointment</h4>
+                        <p>Schedule with available caseworkers</p>
+                        <button class="btn btn-primary" style="margin-top: 10px;">Schedule</button>
+                    </div>
+                    <div class="feature-card" style="cursor: pointer;" onclick="kioskAction('connect')">
+                        <div class="feature-icon"><i class="fas fa-video"></i></div>
+                        <h4>Connect Now</h4>
+                        <p>Instant video chat with support</p>
+                        <button class="btn btn-success" style="margin-top: 10px;">Connect</button>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 30px;">Adaptive Features</h3>
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <h4><i class="fas fa-language"></i> Multi-Language</h4>
+                        <p>Auto-detects preferred language from first interaction</p>
+                        <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button class="btn btn-primary" style="padding: 8px 16px; font-size: 0.9rem;">English</button>
+                            <button class="btn btn-primary" style="padding: 8px 16px; font-size: 0.9rem;">Español</button>
+                            <button class="btn btn-primary" style="padding: 8px 16px; font-size: 0.9rem;">ខ្មែរ</button>
+                            <button class="btn btn-primary" style="padding: 8px 16px; font-size: 0.9rem;">Tagalog</button>
+                            <button class="btn btn-primary" style="padding: 8px 16px; font-size: 0.9rem;">한국어</button>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h4><i class="fas fa-text-height"></i> Accessibility</h4>
+                        <p>AI auto-adjusts for vision, hearing, and mobility needs</p>
+                        <div style="margin-top: 15px;">
+                            <label style="display: block; margin-bottom: 10px;">
+                                <input type="checkbox" checked> Large Text
+                            </label>
+                            <label style="display: block; margin-bottom: 10px;">
+                                <input type="checkbox" checked> High Contrast
+                            </label>
+                            <label style="display: block;">
+                                <input type="checkbox"> Screen Reader
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ai-chat" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                    <div class="chat-header">
+                        <div class="ai-avatar">
+                            <i class="fas fa-hands-helping"></i>
+                        </div>
+                        <div>
+                            <h3 style="margin: 0;">AI Kiosk Assistant - Sam</h3>
+                            <p style="margin: 0; opacity: 0.8; font-size: 0.9rem;">Touch, voice, or text - I adapt to you</p>
+                        </div>
+                    </div>
+
+                    <div class="chat-messages" id="kiosk-chat">
+                        <div class="message ai">
+                            <strong>Kiosk AI:</strong> Welcome to Long Beach First Contact! I've adjusted the interface for optimal readability. You can touch the screen, speak, or type. How can I help you access services today?
+                        </div>
+                    </div>
+
+                    <div class="chat-input-container">
+                        <input type="text" class="chat-input" id="kiosk-input" placeholder="Type or tap microphone to speak..." onkeypress="handleEnter(event, 'kiosk')">
+                        <button class="send-btn" onclick="sendMessage('kiosk')">
+                            <i class="fas fa-paper-plane"></i> Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Dashboard Tab -->
+            <div id="admin" class="tab-content">
+                <h2><i class="fas fa-cogs"></i> Admin Dashboard - AI System Management</h2>
+                <p style="margin-bottom: 20px; color: #6c757d;">Predictive system optimization and AI model management</p>
+
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">System Health</div>
+                            <div class="card-icon" style="background: #28a745; color: white;">
+                                <i class="fas fa-heartbeat"></i>
+                            </div>
+                        </div>
+                        <div class="stat-number">99.9%</div>
+                        <div class="stat-label">Uptime</div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">AI Model Performance</div>
+                            <div class="card-icon" style="background: #667eea; color: white;">
+                                <i class="fas fa-brain"></i>
+                            </div>
+                        </div>
+                        <div class="stat-number">94.2%</div>
+                        <div class="stat-label">Accuracy</div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Bias Detection</div>
+                            <div class="card-icon" style="background: #17a2b8; color: white;">
+                                <i class="fas fa-balance-scale"></i>
+                            </div>
+                        </div>
+                        <div class="stat-number">0.02</div>
+                        <div class="stat-label">Bias Score (Excellent)</div>
+                    </div>
+                </div>
+
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle" style="font-size: 1.5rem;"></i>
+                    <div>
+                        <strong>System Status:</strong> All AI models operating within normal parameters. No bias detected. Performance exceeding targets.
+                    </div>
+                </div>
+
+                <h3>AI Model Monitoring</h3>
+                <ul class="case-list">
+                    <li class="case-item">
+                        <div>
+                            <strong>Crisis Prediction Model</strong> <span class="case-priority priority-low">OPTIMAL</span>
+                            <br><small>Accuracy: 92.1% • Last updated: 2 hours ago</small>
+                            <div class="progress-bar" style="margin-top: 10px;">
+                                <div class="progress-fill" style="width: 92%;"></div>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="case-item">
+                        <div>
+                            <strong>Resource Matching Model</strong> <span class="case-priority priority-low">OPTIMAL</span>
+                            <br><small>Accuracy: 89.7% • Last updated: 1 hour ago</small>
+                            <div class="progress-bar" style="margin-top: 10px;">
+                                <div class="progress-fill" style="width: 90%;"></div>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="case-item">
+                        <div>
+                            <strong>Sentiment Analysis Model</strong> <span class="case-priority priority-low">OPTIMAL</span>
+                            <br><small>Accuracy: 94.3% • Last updated: 30 minutes ago</small>
+                            <div class="progress-bar" style="margin-top: 10px;">
+                                <div class="progress-fill" style="width: 94%;"></div>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+
+                <h3 style="margin-top: 30px;">Compliance Monitoring</h3>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon" style="color: #28a745;"><i class="fas fa-check-circle"></i></div>
+                        <h4>HIPAA Compliant</h4>
+                        <p>Healthcare-level data protection</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon" style="color: #28a745;"><i class="fas fa-check-circle"></i></div>
+                        <h4>HUD/HMIS Compliant</h4>
+                        <p>Automated compliance reporting</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon" style="color: #28a745;"><i class="fas fa-check-circle"></i></div>
+                        <h4>WCAG 2.1 AA</h4>
+                        <p>Full accessibility compliance</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon" style="color: #28a745;"><i class="fas fa-check-circle"></i></div>
+                        <h4>Ethical AI</h4>
+                        <p>Transparent, unbiased AI</p>
+                    </div>
+                </div>
+
+                <div class="ai-chat" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                    <div class="chat-header">
+                        <div class="ai-avatar">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div>
+                            <h3 style="margin: 0;">AI System Manager - Jordan</h3>
+                            <p style="margin: 0; opacity: 0.8; font-size: 0.9rem;">Predictive optimization & model management</p>
+                        </div>
+                    </div>
+
+                    <div class="chat-messages" id="admin-chat">
+                        <div class="message ai">
+                            <strong>System AI:</strong> System operating optimally. All AI models performing above target. No security threats detected. Predictive analysis suggests increasing cache size by 15% for optimal performance during peak hours. Shall I implement this optimization?
+                        </div>
+                    </div>
+
+                    <div class="chat-input-container">
+                        <input type="text" class="chat-input" id="admin-input" placeholder="Query system status, adjust parameters, or run diagnostics..." onkeypress="handleEnter(event, 'admin')">
+                        <button class="send-btn" onclick="sendMessage('admin')">
+                            <i class="fas fa-paper-plane"></i> Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Info -->
+        <div style="text-align: center; margin-top: 40px; padding: 40px; color: white;">
+            <h3 style="font-size: 2rem; margin-bottom: 15px;">Why This System Wins</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 30px;">
+                <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; backdrop-filter: blur(10px);">
+                    <i class="fas fa-brain" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                    <h4>Human-in-the-Loop</h4>
+                    <p style="font-size: 0.9rem;">AI amplifies, never replaces</p>
+                </div>
+                <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; backdrop-filter: blur(10px);">
+                    <i class="fas fa-graduation-cap" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                    <h4>Continuous Learning</h4>
+                    <p style="font-size: 0.9rem;">Gets smarter every day</p>
+                </div>
+                <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; backdrop-filter: blur(10px);">
+                    <i class="fas fa-shield-alt" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                    <h4>Crisis Prevention</h4>
+                    <p style="font-size: 0.9rem;">Proactive, not reactive</p>
+                </div>
+                <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; backdrop-filter: blur(10px);">
+                    <i class="fas fa-globe" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                    <h4>Cultural Intelligence</h4>
+                    <p style="font-size: 0.9rem;">Adapts to diversity</p>
+                </div>
+            </div>
+            <p style="margin-top: 40px; font-size: 1.2rem; font-weight: 600;">
+                Built with <i class="fas fa-heart" style="color: #ff6b6b;"></i> for Long Beach's vulnerable populations
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Tab Switching
+        function switchTab(tabName) {
+            // Hide all tabs
+            const allTabs = document.querySelectorAll('.tab-content');
+            allTabs.forEach(tab => tab.classList.remove('active'));
+
+            // Remove active class from all buttons
+            const allButtons = document.querySelectorAll('.tab-btn');
+            allButtons.forEach(btn => btn.classList.remove('active'));
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+
+            // Activate corresponding button
+            event.target.classList.add('active');
+        }
+
+        // AI Chat Responses
+        const aiResponses = {
+            client: {
+                housing: [
+                    "I found 7 housing assistance programs you're eligible for! The most relevant is the Long Beach Emergency Housing Program. It provides up to 6 months of rental assistance. Would you like me to start your application?",
+                    "Based on your profile, I can also connect you with: Transitional Housing Support, Long-term Affordable Housing Waitlist, and Housing Counseling Services. Which interests you most?"
+                ],
+                appointment: [
+                    "I can schedule you with Sarah Johnson, your assigned case manager. She has availability: Tomorrow at 2 PM, Thursday at 10 AM, or Friday at 3 PM. Which works best for you?",
+                    "I've reserved Tomorrow at 2 PM for you. You'll receive a reminder 24 hours and 1 hour before. The meeting will be at the Long Beach Community Center, Room 204. Need directions?"
+                ],
+                documents: [
+                    "Great! You can upload documents by taking a photo or selecting files. I need: Photo ID, Proof of residency, and Income documentation. I'll guide you through each one. Ready to start?",
+                    "Perfect! I've received your ID. The system has automatically verified it. Next, please upload proof of residency (utility bill, lease, or similar). I'll wait here!"
+                ],
+                default: [
+                    "I understand you need assistance. I can help with: Housing Resources, Food Assistance, Employment Support, Healthcare Services, or Crisis Support. What's most important to you right now?",
+                    "I'm here to help 24/7! I can answer questions, connect you to resources, schedule appointments, or escalate to human support if needed. Just tell me what you need.",
+                    "Based on your previous interactions, I think you might benefit from our job training programs. We've helped 89% of participants find employment. Interested?",
+                ]
+            },
+            caseworker: {
+                default: [
+                    "Based on analysis of your caseload, here are my recommendations for today: 1) Priority contact with Sarah M. (crisis risk), 2) Follow-up call with John D. (employment match found), 3) Complete care plan review for Maria R. Would you like me to draft outreach messages?",
+                    "I've analyzed Sarah M.'s case history. Her communication patterns show 3 key stress indicators. I recommend: 1) Immediate welfare check, 2) Emergency housing assessment, 3) Mental health referral. I can prepare all necessary documentation. Proceed?",
+                    "Your success rate with AI assistance is 94% vs. 82% without. The key difference: Early intervention recommendations have prevented 12 crisis situations this month. You're making a real impact!",
+                    "I've identified a new resource match: John D. qualifies for the Advanced Manufacturing Training Program. Historical data shows 91% job placement rate. Shall I notify him?"
+                ]
+            },
+            city: {
+                default: [
+                    "Current trends analysis: Housing crisis requests up 8% this quarter, but emergency shelter use down 15% thanks to preventive interventions. The AI system is working! Recommend continuing current program mix.",
+                    "Predictive model shows District 3 will see 23% increase in service requests next month due to upcoming rent increases. Recommend pre-positioning resources and proactive outreach to at-risk households.",
+                    "Equity analysis complete: Service distribution is fair across demographics. Hispanic/Latino community slightly underserved (-3%). Recommend targeted outreach in Spanish-language media.",
+                    "Policy simulation complete: Increasing housing assistance by $500K would prevent estimated 47 emergency situations and save $1.2M in crisis response costs. ROI: 240%."
+                ]
+            },
+            kiosk: {
+                default: [
+                    "I can help you access services right now! Would you like to: 1) Find services you qualify for, 2) Schedule an appointment, 3) Check application status, or 4) Connect to a live caseworker?",
+                    "I've detected you prefer larger text. I've adjusted the screen for easier reading. I can also enable voice mode if you'd prefer to speak instead of typing. What would you like to do?",
+                    "Welcome! This kiosk provides private, confidential access to all city services. Everything we discuss stays between us. How can I help you today?",
+                    "Based on the information you've shared, you may qualify for 5 different assistance programs. Would you like me to check your eligibility for each one?"
+                ]
+            },
+            admin: {
+                default: [
+                    "System diagnostics complete: All AI models performing optimally. Crisis prediction: 92% accuracy. Resource matching: 90% accuracy. No bias detected in any model. Recommendation: No immediate action needed.",
+                    "Security scan complete: No threats detected. All compliance requirements met (HIPAA, HUD/HMIS, WCAG 2.1 AA). Audit logs show no suspicious activity. System is secure.",
+                    "Performance optimization opportunity identified: Implementing Redis caching on resource matching queries would reduce response time by 340ms and improve user experience. Estimated implementation time: 2 hours. Recommend during next maintenance window.",
+                    "Model retraining complete: Crisis prediction model accuracy improved from 89.2% to 92.1% using last 30 days of outcome data. Bias score remains excellent at 0.02. Deploying to production."
+                ]
+            }
+        };
+
+        function sendMessage(portal) {
+            const input = document.getElementById(`${portal}-input`);
+            const chatMessages = document.getElementById(`${portal}-chat`);
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            // Add user message
+            const userMsg = document.createElement('div');
+            userMsg.className = 'message user';
+            userMsg.innerHTML = `<strong>You:</strong> ${message}`;
+            chatMessages.appendChild(userMsg);
+
+            // Clear input
+            input.value = '';
+
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // Simulate AI thinking
+            const thinkingMsg = document.createElement('div');
+            thinkingMsg.className = 'message ai';
+            thinkingMsg.innerHTML = '<div class="loading-spinner"></div> AI is thinking...';
+            chatMessages.appendChild(thinkingMsg);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // Get AI response after delay
+            setTimeout(() => {
+                chatMessages.removeChild(thinkingMsg);
+
+                const aiMsg = document.createElement('div');
+                aiMsg.className = 'message ai';
+
+                // Get appropriate response
+                const responses = aiResponses[portal].default;
+                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+
+                aiMsg.innerHTML = `<strong>AI Assistant:</strong> ${randomResponse}`;
+                chatMessages.appendChild(aiMsg);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }, 1500);
+        }
+
+        function handleEnter(event, portal) {
+            if (event.key === 'Enter') {
+                sendMessage(portal);
+            }
+        }
+
+        function simulateClientAction(action) {
+            const chatMessages = document.getElementById('client-chat');
+            const input = document.getElementById('client-input');
+
+            const actionMessages = {
+                housing: "I need help finding housing",
+                appointment: "I'd like to schedule an appointment",
+                documents: "I want to upload my documents"
+            };
+
+            input.value = actionMessages[action];
+            sendMessage('client');
+        }
+
+        function handleCrisisAlert() {
+            alert('Connecting you to Crisis Support Team...\n\nIn a real system, this would:\n✓ Initiate emergency protocol\n✓ Notify on-call supervisor\n✓ Create priority case\n✓ Dispatch mobile crisis team if needed\n✓ Log all actions for compliance');
+
+            const chatMessages = document.getElementById('caseworker-chat');
+            const aiMsg = document.createElement('div');
+            aiMsg.className = 'message ai';
+            aiMsg.innerHTML = '<strong>AI Assistant:</strong> Crisis protocol activated. I\'ve notified the supervisor and prepared an emergency assessment form. Mobile crisis team is on standby. Here\'s Sarah\'s contact information and last known location. I recommend immediate phone contact followed by in-person welfare check within 4 hours.';
+            chatMessages.appendChild(aiMsg);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function openCase(caseId) {
+            const caseDetails = {
+                1: "Sarah M.\n━━━━━━━━━━\nRisk Level: HIGH\nCrisis Probability: 78%\n\nAI Analysis:\n• Last contact: 5 days ago (unusual)\n• Missed 2 scheduled appointments\n• Recent job loss detected\n• Rent payment due in 3 days\n• No emergency fund\n\nRecommendations:\n1. Immediate phone contact\n2. Emergency housing assessment\n3. Crisis prevention services\n4. Mental health referral\n\nWould you like to proceed with crisis intervention?",
+                2: "John D.\n━━━━━━━━━━\nRisk Level: MEDIUM\nProgress: Good\n\nAI Analysis:\n• Employment goal: Active\n• Skills assessment: Complete\n• New match found: Advanced Manufacturing Training\n• Program success rate: 91%\n• Best contact time: Weekday mornings\n\nRecommendations:\n1. Share training program details\n2. Schedule enrollment meeting\n3. Prepare required documentation\n\nReady to contact John?",
+                3: "Maria R.\n━━━━━━━━━━\nRisk Level: LOW\nProgress: Excellent\n\nAI Analysis:\n• Housing: Stable\n• Employment: Full-time\n• All goals on track\n• High engagement level\n• Success probability: 94%\n\nRecommendations:\n1. Continue current support level\n2. Next check-in: 2 weeks\n3. Begin exit planning in 60 days\n\nMaria is thriving! Great work!"
+            };
+
+            alert(caseDetails[caseId]);
+        }
+
+        function kioskAction(action) {
+            const actions = {
+                voice: "Voice mode activated!\n\nIn a real system:\n✓ Microphone would activate\n✓ Speech-to-text enabled\n✓ Multi-language support\n✓ Natural conversation flow\n\nTry saying: 'I need help with housing'",
+                services: "Service Finder activated!\n\nSearching for services...\n\nFound 12 services you may qualify for:\n✓ Emergency Housing Assistance\n✓ Food Support Programs\n✓ Job Training\n✓ Healthcare Access\n✓ Childcare Support\n...and 7 more!\n\nWould you like details on any of these?",
+                appointments: "Appointment Scheduler activated!\n\nAvailable caseworkers:\n• Sarah Johnson - Tomorrow 2PM, 4PM\n• Michael Chen - Thursday 10AM, 2PM\n• Patricia Garcia - Friday 9AM, 11AM\n\nWhich time works best for you?",
+                connect: "Connecting to live support...\n\nIn a real system:\n✓ Video call initiated\n✓ Next available caseworker notified\n✓ Your information shared securely\n✓ Interpreter available if needed\n\nEstimated wait time: 30 seconds"
+            };
+
+            alert(actions[action]);
+        }
+
+        function showCrisisSupport() {
+            alert('🚨 CRISIS SUPPORT 🚨\n━━━━━━━━━━━━━━━━━━━\n\nImmediate Help Available:\n\n📞 24/7 Crisis Hotline:\n988 (Suicide & Crisis Lifeline)\n\n🏠 Emergency Shelter:\n(562) 570-4500\n\n👮 Emergency Services:\n911\n\n💬 Text Support:\nText HOME to 741741\n\n🤖 AI Crisis Assistant:\nConnecting to trained human counselor...\n\n━━━━━━━━━━━━━━━━━━━\nYou are not alone. Help is available 24/7.');
+        }
+
+        // Animate stats on load
+        window.addEventListener('load', () => {
+            // Add some dynamic effects
+            console.log('%c🚀 First Contact EIS Demo Loaded!', 'color: #667eea; font-size: 20px; font-weight: bold;');
+            console.log('%c✨ This is a fully interactive demo showcasing AI-enhanced civic services', 'color: #764ba2; font-size: 14px;');
+            console.log('%c💡 Try clicking around and chatting with the AI assistants!', 'color: #28a745; font-size: 14px;');
+        });
+
+        // Auto-update stats for realism
+        setInterval(() => {
+            const progressBars = document.querySelectorAll('.progress-fill');
+            progressBars.forEach(bar => {
+                const currentWidth = parseInt(bar.style.width);
+                const variance = Math.floor(Math.random() * 3) - 1; // -1, 0, or 1
+                const newWidth = Math.max(0, Math.min(100, currentWidth + variance));
+                bar.style.width = newWidth + '%';
+            });
+        }, 5000);
+    </script>
+</body>
+</html>
