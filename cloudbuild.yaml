@@ -1,0 +1,259 @@
+# Cloud Build configuration for First Contact EIS
+# This builds all services and deploys them to Cloud Run
+
+substitutions:
+  _REGION: us-central1
+  _PROJECT_NAME: firstcontact-eis
+
+options:
+  machineType: 'E2_HIGHCPU_8'
+  logging: CLOUD_LOGGING_ONLY
+  dynamic_substitutions: true
+
+steps:
+  # Build Backend
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-backend'
+    args:
+      - 'build'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_PROJECT_NAME}-images/backend:$SHORT_SHA'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_PROJECT_NAME}-images/backend:latest'
+      - '-f'
+      - 'backend/Dockerfile.cloudrun'
+      - './backend'
+
+  # Build Client Frontend
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-client'
+    args:
+      - 'build'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_PROJECT_NAME}-images/client:$SHORT_SHA'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_PROJECT_NAME}-images/client:latest'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_API_URL=${_BACKEND_URL}'
+      - '-f'
+      - 'frontend/client/Dockerfile.cloudrun'
+      - './frontend/client'
+
+  # Build Caseworker Frontend
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-caseworker'
+    args:
+      - 'build'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_PROJECT_NAME}-images/caseworker:$SHORT_SHA'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_PROJECT_NAME}-images/caseworker:latest'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_API_URL=${_BACKEND_URL}'
+      - '-f'
+      - 'frontend/caseworker/Dockerfile.cloudrun'
+      - './frontend/caseworker'
+
+  # Build City Frontend
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-city'
+    args:
+      - 'build'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_PROJECT_NAME}-images/city:$SHORT_SHA'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_PROJECT_NAME}-images/city:latest'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_API_URL=${_BACKEND_URL}'
+      - '-f'
+      - 'frontend/city/Dockerfile.cloudrun'
+      - './frontend/city'
+
+  # Build Kiosk Frontend
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-kiosk'
+    args:
+      - 'build'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_PROJECT_NAME}-images/kiosk:$SHORT_SHA'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_PROJECT_NAME}-images/kiosk:latest'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_API_URL=${_BACKEND_URL}'
+      - '-f'
+      - 'frontend/kiosk/Dockerfile.cloudrun'
+      - './frontend/kiosk'
+
+  # Build Admin Frontend
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-admin'
+    args:
+      - 'build'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_PROJECT_NAME}-images/admin:$SHORT_SHA'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_PROJECT_NAME}-images/admin:latest'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_API_URL=${_BACKEND_URL}'
+      - '-f'
+      - 'frontend/admin/Dockerfile.cloudrun'
+      - './frontend/admin'
+
+  # Push all images
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-images'
+    args:
+      - 'push'
+      - '--all-tags'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_PROJECT_NAME}-images/backend'
+    waitFor: ['build-backend']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '--all-tags'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_PROJECT_NAME}-images/client'
+    waitFor: ['build-client']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '--all-tags'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_PROJECT_NAME}-images/caseworker'
+    waitFor: ['build-caseworker']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '--all-tags'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_PROJECT_NAME}-images/city'
+    waitFor: ['build-city']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '--all-tags'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_PROJECT_NAME}-images/kiosk'
+    waitFor: ['build-kiosk']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '--all-tags'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_PROJECT_NAME}-images/admin'
+    waitFor: ['build-admin']
+
+  # Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-backend'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - '${_PROJECT_NAME}-backend'
+      - '--image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_PROJECT_NAME}-images/backend:$SHORT_SHA'
+      - '--region=${_REGION}'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--min-instances=0'
+      - '--max-instances=10'
+      - '--memory=2Gi'
+      - '--cpu=2'
+      - '--timeout=300'
+      - '--concurrency=80'
+    waitFor: ['push-images']
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-client'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - '${_PROJECT_NAME}-client'
+      - '--image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_PROJECT_NAME}-images/client:$SHORT_SHA'
+      - '--region=${_REGION}'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--min-instances=0'
+      - '--max-instances=10'
+      - '--memory=512Mi'
+      - '--cpu=1'
+    waitFor: ['deploy-backend']
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-caseworker'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - '${_PROJECT_NAME}-caseworker'
+      - '--image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_PROJECT_NAME}-images/caseworker:$SHORT_SHA'
+      - '--region=${_REGION}'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--min-instances=0'
+      - '--max-instances=10'
+      - '--memory=512Mi'
+      - '--cpu=1'
+    waitFor: ['deploy-backend']
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-city'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - '${_PROJECT_NAME}-city'
+      - '--image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_PROJECT_NAME}-images/city:$SHORT_SHA'
+      - '--region=${_REGION}'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--min-instances=0'
+      - '--max-instances=10'
+      - '--memory=512Mi'
+      - '--cpu=1'
+    waitFor: ['deploy-backend']
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-kiosk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - '${_PROJECT_NAME}-kiosk'
+      - '--image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_PROJECT_NAME}-images/kiosk:$SHORT_SHA'
+      - '--region=${_REGION}'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--min-instances=0'
+      - '--max-instances=10'
+      - '--memory=512Mi'
+      - '--cpu=1'
+    waitFor: ['deploy-backend']
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-admin'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - '${_PROJECT_NAME}-admin'
+      - '--image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_PROJECT_NAME}-images/admin:$SHORT_SHA'
+      - '--region=${_REGION}'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--min-instances=0'
+      - '--max-instances=10'
+      - '--memory=512Mi'
+      - '--cpu=1'
+    waitFor: ['deploy-backend']
+
+images:
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_PROJECT_NAME}-images/backend:$SHORT_SHA'
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_PROJECT_NAME}-images/client:$SHORT_SHA'
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_PROJECT_NAME}-images/caseworker:$SHORT_SHA'
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_PROJECT_NAME}-images/city:$SHORT_SHA'
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_PROJECT_NAME}-images/kiosk:$SHORT_SHA'
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_PROJECT_NAME}-images/admin:$SHORT_SHA'
+
+timeout: 3600s
