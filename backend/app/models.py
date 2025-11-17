@@ -249,6 +249,7 @@ class Client(Base):
     organization = relationship("Organization", back_populates="clients")
     user = relationship("User")
     cases = relationship("Case", back_populates="client")
+    assessments = relationship("Assessment", back_populates="client")
     intakes = relationship("Intake", back_populates="client")
     mutual_support_pairs_a = relationship("MutualSupportPair", foreign_keys="MutualSupportPair.client_a_id", back_populates="client_a")
     mutual_support_pairs_b = relationship("MutualSupportPair", foreign_keys="MutualSupportPair.client_b_id", back_populates="client_b")
@@ -335,6 +336,49 @@ class Case(Base):
     assigned_caseworker = relationship("User", foreign_keys=[assigned_caseworker_id], back_populates="assigned_cases")
     created_by_user = relationship("User", foreign_keys=[created_by], back_populates="created_cases")
     mutual_support_pair = relationship("MutualSupportPair", back_populates="cases")
+
+# ============================================================================
+# ASSESSMENTS
+# ============================================================================
+
+class Assessment(Base):
+    """
+    Client needs assessment and vulnerability scoring
+    Used by AI to prioritize and match services
+    """
+    __tablename__ = "assessments"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    client_id = Column(UUID(as_uuid=True), ForeignKey("clients.id"), nullable=False)
+    case_id = Column(UUID(as_uuid=True), ForeignKey("cases.id"), nullable=True)
+    assessed_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+
+    # Assessment scores
+    vulnerability_score = Column(Float)  # 0-100
+    housing_need_score = Column(Float)  # 0-100
+    medical_need_score = Column(Float)  # 0-100
+    mental_health_score = Column(Float)  # 0-100
+
+    # Crisis indicators
+    crisis_level = Column(Enum(CrisisLevel), nullable=False, default=CrisisLevel.LOW)
+    immediate_needs = Column(JSON, default=[])  # Array of urgent needs
+
+    # Services needed
+    recommended_services = Column(JSON, default=[])  # Array of ServiceType
+
+    # AI-generated insights
+    ai_notes = Column(Text)
+    ai_confidence = Column(Float)  # 0-1
+
+    # Timestamps
+    assessed_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    client = relationship("Client", back_populates="assessments")
+    case = relationship("Case", backref="assessments")
+    assessor = relationship("User", foreign_keys=[assessed_by])
 
 # ============================================================================
 # MUTUAL SUPPORT PAIRS (THE INNOVATION!)

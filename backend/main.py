@@ -9,66 +9,49 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
+# from fastapi.middleware.trustedhost import TrustedHostMiddleware  # Removed for demo
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 
 from app.database import init_db
-from app.auth import auth_router
-from app.ai_service import ai_router, AIService
-from app.ai_case_manager import AICaseManager
-from app.ai_client_concierge import AIClientConcierge
-from app.ai_municipal_intelligence import AIMunicipalIntelligence
-from app.ai_kiosk_intelligence import AIKioskIntelligence
-from app.ai_system_management import AISystemManagement
-from app.ai_cross_system_learning import AICrossSystemLearning
+# from app.auth import auth_router  # TODO: Enable after demo
+# AI Services - disabled for demo, enable during pilot
+# from app.ai_service import ai_router, AIService
+# from app.ai_case_manager import AICaseManager
+# from app.ai_client_concierge import AIClientConcierge
+# from app.ai_municipal_intelligence import AIMunicipalIntelligence
+# from app.ai_kiosk_intelligence import AIKioskIntelligence
+# from app.ai_system_management import AISystemManagement
+# from app.ai_cross_system_learning import AICrossSystemLearning
 from app.models import Base
 from app.schemas import HealthResponse
-from health_check import health_check_router
+# from health_check import health_check_router  # Using inline health check
 from logging_config import setup_logging
 
 # Setup logging
 setup_logging()
 logger = logging.getLogger(__name__)
 
-# Global AI services instance
-ai_services = {}
+# Global services instance
+services = {}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager"""
     # Startup
-    logger.info("Starting First Contact EIS Backend...")
-    await init_db()
-    logger.info("Database initialized successfully")
-    
-    # Initialize AI services
-    logger.info("Initializing AI services...")
-    ai_service = AIService()
-    ai_services["ai_service"] = ai_service
-    
-    # Initialize specialized AI systems
-    ai_services["case_manager"] = AICaseManager(ai_service)
-    ai_services["client_concierge"] = AIClientConcierge(ai_service)
-    ai_services["municipal_intelligence"] = AIMunicipalIntelligence(ai_service)
-    ai_services["kiosk_intelligence"] = AIKioskIntelligence(ai_service)
-    ai_services["system_management"] = AISystemManagement(ai_service)
-    
-    # Initialize cross-system learning
-    ai_services["cross_system_learning"] = AICrossSystemLearning(ai_service)
-    await ai_services["cross_system_learning"].initialize_system_connections(
-        ai_services["case_manager"],
-        ai_services["client_concierge"],
-        ai_services["municipal_intelligence"],
-        ai_services["kiosk_intelligence"],
-        ai_services["system_management"]
-    )
-    
-    logger.info("AI services initialized successfully")
-    
+    logger.info("Starting First Contact EIS Backend (Demo Mode)...")
+    try:
+        await init_db()
+        logger.info("Database initialized successfully")
+    except Exception as e:
+        logger.warning(f"Database init skipped (expected in demo mode): {e}")
+
+    # AI services will be initialized during pilot phase
+    logger.info("Backend ready for demo")
+
     yield
-    
+
     # Shutdown
     logger.info("Shutting down First Contact EIS Backend...")
 
@@ -92,11 +75,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Trusted host middleware
-app.add_middleware(
-    TrustedHostMiddleware,
-    allowed_hosts=["localhost", "127.0.0.1", "*.railway.app", "*.vercel.app"]
-)
+# Trusted host middleware - DISABLED for demo (re-enable in production)
+# app.add_middleware(
+#     TrustedHostMiddleware,
+#     allowed_hosts=["*"]
+# )
 
 # Global exception handler
 @app.exception_handler(Exception)
@@ -141,15 +124,15 @@ async def root():
     }
 
 # Include routers
-from app.routes import api_router  # NEW: Our core business logic routes
+from app.routes import api_router  # Core business logic routes
 
-app.include_router(api_router)  # Includes intake, alerts, analytics
-app.include_router(health_check_router, prefix="/api/v1", tags=["Health"])
-app.include_router(auth_router, prefix="/api/v1/auth", tags=["Authentication"])
-app.include_router(ai_router, prefix="/api/v1/ai", tags=["AI Services"])
+app.include_router(api_router)  # Includes intake, alerts, analytics, orchestration
+# app.include_router(health_check_router, prefix="/api/v1", tags=["Health"])  # Using inline health check
+# app.include_router(auth_router, prefix="/api/v1/auth", tags=["Authentication"])  # TODO: Enable after demo
+# app.include_router(ai_router, prefix="/api/v1/ai", tags=["AI Services"])  # TODO: Enable during pilot
 
-# Mount static files
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# Mount static files (if directory exists)
+# app.mount("/static", StaticFiles(directory="static"), name="static")  # TODO: Add static files if needed
 
 if __name__ == "__main__":
     uvicorn.run(

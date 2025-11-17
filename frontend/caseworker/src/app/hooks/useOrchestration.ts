@@ -63,7 +63,7 @@ export function useRejectRecommendation() {
 // Trigger demo event
 export function useTriggerDemoEvent() {
   const queryClient = useQueryClient()
-  
+
   return useMutation({
     mutationFn: async () => {
       const res = await fetch(`${API_URL}/api/v1/orchestration/trigger-event`, {
@@ -90,3 +90,6 @@ export function useTriggerDemoEvent() {
     }
   })
 }
+
+// Also export as useTriggerEvent for compatibility
+export const useTriggerEvent = useTriggerDemoEvent;

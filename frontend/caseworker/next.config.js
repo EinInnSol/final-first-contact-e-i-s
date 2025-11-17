@@ -3,9 +3,6 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   output: 'standalone',
-  experimental: {
-    appDir: true,
-  },
   images: {
     domains: ['localhost', 'firstcontact-eis.org'],
     unoptimized: true,

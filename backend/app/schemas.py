@@ -521,3 +521,42 @@ class GeospatialAnalytics(BaseModel):
     total_intakes: int
     total_pairs: int
     overall_pairing_rate: float
+
+# ============================================================================
+# AUTHENTICATION & USER SCHEMAS
+# ============================================================================
+
+class Token(BaseModel):
+    """JWT access token response"""
+    access_token: str
+    token_type: str = "bearer"
+
+class TokenData(BaseModel):
+    """Data stored in JWT token"""
+    user_id: Optional[UUID] = None
+    email: Optional[str] = None
+
+class UserBase(BaseModel):
+    """Base user schema"""
+    email: EmailStr
+    full_name: Optional[str] = None
+    role: UserRoleEnum = UserRoleEnum.CASEWORKER
+
+class UserCreate(UserBase):
+    """Schema for creating a new user"""
+    password: str = Field(..., min_length=8)
+
+class UserLogin(BaseModel):
+    """Schema for user login"""
+    email: EmailStr
+    password: str
+
+class User(UserBase):
+    """User response schema"""
+    id: UUID
+    organization_id: Optional[UUID] = None
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True

@@ -1,426 +1,180 @@
-'use client';
+'use client'
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  Users, 
-  FileText, 
-  Calendar, 
-  BarChart3, 
-  Settings,
-  Bell,
-  Search,
-  Filter,
-  Plus,
-  ChevronRight,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  Star,
-  Bot,
-  Shield,
-  TrendingUp,
-  Zap
-} from 'lucide-react';
-import { toast } from 'react-hot-toast';
-import { cn } from '../lib/utils';
-import { useAuth } from '../hooks/useAuth';
-import { useLanguage } from '../hooks/useLanguage';
-import { useWebSocket } from '../hooks/useWebSocket';
-import { CaseManagement } from './CaseManagement';
-import { ClientList } from './ClientList';
-import { AIAssistant } from './AIAssistant';
-import { ComplianceDashboard } from './ComplianceDashboard';
-import { Notifications } from './Notifications';
-import { CrisisAlert } from './CrisisAlert';
-import { PerformanceMetrics } from './PerformanceMetrics';
-import { RecommendationsFeed } from './RecommendationsFeed';
-import { useRecommendations, useApproveRecommendation, useRejectRecommendation, useTriggerEvent } from '../hooks/useOrchestration';
+import React, { useState } from 'react'
+import { Users, Bell, Filter, Search, Clock, CheckCircle2, AlertCircle, Activity } from 'lucide-react'
+import { RecommendationsFeed } from './RecommendationsFeed'
 
-interface CaseworkerDashboardProps {
-  user: any;
-  language: string;
-  t: (key: string) => string;
-}
+export function CaseworkerDashboard() {
+  const [selectedClient, setSelectedClient] = useState<string | null>(null)
+  const [filterStatus, setFilterStatus] = useState('all')
 
-export function CaseworkerDashboard({ user, language, t }: CaseworkerDashboardProps) {
-  const [activeTab, setActiveTab] = useState('recommendations');
-  const [crisisDetected, setCrisisDetected] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const { t: translate } = useLanguage();
-  const queryClient = useQueryClient();
+  // Mock client data
+  const clients = [
+    { id: 'maria', name: 'Maria Rodriguez', status: 'active', urgency: 'high', lastContact: '2 hours ago', upcomingAppt: 'Today 2pm' },
+    { id: 'robert', name: 'Robert Johnson', status: 'active', urgency: 'high', lastContact: '5 hours ago', upcomingAppt: 'Tomorrow 10am' },
+    { id: 'sarah', name: 'Sarah Williams', status: 'pending', urgency: 'medium', lastContact: '1 day ago', upcomingAppt: 'None' },
+    { id: 'james', name: 'James Davis', status: 'active', urgency: 'low', lastContact: '3 days ago', upcomingAppt: 'Next week' },
+    { id: 'jennifer', name: 'Jennifer Garcia', status: 'inactive', urgency: 'low', lastContact: '1 week ago', upcomingAppt: 'None' },
+  ]
 
-  // WebSocket connection for real-time updates
-  useWebSocket({
-    onMessage: (message) => {
-      if (message.type === 'crisis_alert') {
-        setCrisisDetected(true);
-        toast.error(t('crisis.alert_detected'));
-      } else if (message.type === 'notification') {
-        setNotifications(prev => [...prev, message.data]);
-        toast.success(t('notifications.new_notification'));
-      } else if (message.type === 'case_update') {
-        queryClient.invalidateQueries(['cases']);
-        toast.info(t('cases.updated'));
-      }
-    }
-  });
-
-  // Orchestration hooks
-  const { data: recommendations = [], isLoading: recommendationsLoading } = useRecommendations();
-  const approveRecommendation = useApproveRecommendation();
-  const rejectRecommendation = useRejectRecommendation();
-  const triggerEvent = useTriggerEvent();
-
-  const handleApproveRecommendation = (recommendationId: string) => {
-    approveRecommendation.mutate(recommendationId);
-  };
-
-  const handleRejectRecommendation = (recommendationId: string) => {
-    rejectRecommendation.mutate(recommendationId);
-  };
-
-  const handleModifyRecommendation = (recommendationId: string) => {
-    // TODO: Open modal for modifying recommendation
-    toast.info('Modification UI coming soon');
-  };
-
-  // DEMO: Trigger appointment cancellation event
-  const handleTriggerDemo = () => {
-    triggerEvent.mutate({
-      event_type: 'appointment_cancelled',
-      client_id: 'maria_demo',
-      metadata: {
-        appointment_time: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
-        provider_id: 'dr_smith',
-        appointment_type: 'primary_care'
-      }
-    });
-  };
-
-  // Fetch user data
-  const { data: userData, isLoading: userLoading } = useQuery({
-    queryKey: ['user', user?.id],
-    queryFn: async () => {
-      const response = await fetch('/api/v1/auth/me', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-        }
-      });
-      if (!response.ok) throw new Error('Failed to fetch user data');
-      return response.json();
-    },
-    enabled: !!user?.id
-  });
-
-  // Fetch cases
-  const { data: cases, isLoading: casesLoading } = useQuery({
-    queryKey: ['cases', user?.id],
-    queryFn: async () => {
-      const response = await fetch(`/api/v1/cases?assigned_user_id=${user?.id}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-        }
-      });
-      if (!response.ok) throw new Error('Failed to fetch cases');
-      return response.json();
-    },
-    enabled: !!user?.id
-  });
-
-  // Fetch clients
-  const { data: clients, isLoading: clientsLoading } = useQuery({
-    queryKey: ['clients'],
-    queryFn: async () => {
-      const response = await fetch('/api/v1/clients', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-        }
-      });
-      if (!response.ok) throw new Error('Failed to fetch clients');
-      return response.json();
-    }
-  });
-
-  // Fetch performance metrics
-  const { data: metrics, isLoading: metricsLoading } = useQuery({
-    queryKey: ['metrics', user?.id],
-    queryFn: async () => {
-      const response = await fetch(`/api/v1/analytics/performance?user_id=${user?.id}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-        }
-      });
-      if (!response.ok) throw new Error('Failed to fetch metrics');
-      return response.json();
-    },
-    enabled: !!user?.id
-  });
-
-  const tabs = [
-    { id: 'recommendations', label: 'AI Recommendations', icon: Zap },
-    { id: 'cases', label: t('tabs.case_management'), icon: FileText },
-    { id: 'clients', label: t('tabs.clients'), icon: Users },
-    { id: 'ai', label: t('tabs.ai_assistant'), icon: Bot },
-    { id: 'compliance', label: t('tabs.compliance'), icon: Shield },
-    { id: 'metrics', label: t('tabs.performance'), icon: BarChart3 },
-    { id: 'settings', label: t('tabs.settings'), icon: Settings }
-  ];
-
-  const handleCrisisResolved = () => {
-    setCrisisDetected(false);
-    toast.success(t('crisis.resolved'));
-  };
-
-  if (userLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600"></div>
-      </div>
-    );
-  }
+  const filteredClients = filterStatus === 'all' 
+    ? clients 
+    : clients.filter(c => c.status === filterStatus)
 
   return (
     <div className="min-h-screen bg-neutral-50">
-      {/* Crisis Alert */}
-      <AnimatePresence>
-        {crisisDetected && (
-          <CrisisAlert
-            onResolve={handleCrisisResolved}
-            t={t}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-neutral-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-primary-900">
-                {t('dashboard.title')}
-              </h1>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              {/* Notifications */}
-              <Notifications 
-                notifications={notifications}
-                onClear={() => setNotifications([])}
-                t={t}
-              />
-              
-              {/* User Menu */}
-              <div className="flex items-center space-x-3">
-                <div className="text-right">
-                  <p className="text-sm font-medium text-neutral-900">
-                    {userData?.first_name} {userData?.last_name}
-                  </p>
-                  <p className="text-xs text-neutral-500">
-                    {t('dashboard.welcome_back')}
-                  </p>
-                </div>
-                <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-                  <Users className="w-5 h-5 text-primary-600" />
-                </div>
+      {/* Top Navigation Bar */}
+      <nav className="bg-white border-b border-neutral-200 shadow-sm sticky top-0 z-50">
+        <div className="px-6 py-4">
+          <div className="flex items-center justify-between">
+            {/* Logo */}
+            <div className="flex items-center gap-4">
+              <div className="w-11 h-11 bg-gradient-to-br from-primary-600 to-primary-700 rounded-lg flex items-center justify-center shadow-md">
+                <span className="text-white font-bold text-xl">FC</span>
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Stats */}
-      <div className="bg-white border-b border-neutral-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-primary-50 rounded-lg p-4">
-              <div className="flex items-center">
-                <FileText className="w-8 h-8 text-primary-600" />
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-primary-600">Active Cases</p>
-                  <p className="text-2xl font-bold text-primary-900">
-                    {cases?.items?.filter(c => c.status === 'open' || c.status === 'in_progress').length || 0}
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-secondary-50 rounded-lg p-4">
-              <div className="flex items-center">
-                <Users className="w-8 h-8 text-secondary-600" />
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-secondary-600">Total Clients</p>
-                  <p className="text-2xl font-bold text-secondary-900">
-                    {clients?.items?.length || 0}
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-warning-50 rounded-lg p-4">
-              <div className="flex items-center">
-                <Clock className="w-8 h-8 text-warning-600" />
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-warning-600">Pending Tasks</p>
-                  <p className="text-2xl font-bold text-warning-900">
-                    {cases?.items?.filter(c => c.status === 'open').length || 0}
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-success-50 rounded-lg p-4">
-              <div className="flex items-center">
-                <TrendingUp className="w-8 h-8 text-success-600" />
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-success-600">Success Rate</p>
-                  <p className="text-2xl font-bold text-success-900">
-                    {metrics?.success_rate || 0}%
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Navigation Tabs */}
-      <div className="bg-white border-b border-neutral-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex space-x-8">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={cn(
-                    "flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200",
-                    activeTab === tab.id
-                      ? "border-primary-500 text-primary-600"
-                      : "border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300"
-                  )}
-                >
-                  <Icon className="w-5 h-5" />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-          >
-            {activeTab === 'recommendations' && (
               <div>
-                {/* Demo Trigger Button */}
-                <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <h3 className="text-sm font-semibold text-yellow-900 mb-2">
-                    🎬 Demo Mode
-                  </h3>
-                  <p className="text-sm text-yellow-700 mb-3">
-                    Trigger a demo "appointment cancellation" event to see the AI orchestration in action
-                  </p>
-                  <button
-                    onClick={handleTriggerDemo}
-                    disabled={triggerEvent.isPending}
-                    className="bg-yellow-600 hover:bg-yellow-700 disabled:bg-yellow-300 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
-                  >
-                    {triggerEvent.isPending ? 'Triggering...' : 'Trigger Demo Event'}
-                  </button>
-                </div>
+                <h1 className="text-xl font-bold text-neutral-900">First Contact E.I.S.</h1>
+                <p className="text-sm text-neutral-500">Caseworker Dashboard</p>
+              </div>
+            </div>
 
-                {/* Recommendations Feed */}
-                <div className="bg-white rounded-lg shadow p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-900">AI Recommendations</h2>
-                      <p className="text-gray-600 mt-1">
-                        Real-time optimization opportunities detected by the orchestration engine
-                      </p>
-                    </div>
-                    {recommendations.length > 0 && (
-                      <span className="bg-yellow-100 text-yellow-800 text-sm font-semibold px-3 py-1 rounded-full">
-                        {recommendations.filter(r => r.status === 'pending_approval').length} pending
-                      </span>
-                    )}
+            {/* User Info */}
+            <div className="flex items-center gap-4">
+              <button className="relative p-2 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-lg transition-colors">
+                <Bell className="w-6 h-6" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-error-500 rounded-full ring-2 ring-white"></span>
+              </button>
+              <div className="flex items-center gap-3 pl-4 border-l border-neutral-200">
+                <div className="text-right">
+                  <div className="text-sm font-semibold text-neutral-900">Sarah Johnson</div>
+                  <div className="text-xs text-neutral-500">Senior Caseworker</div>
+                </div>
+                <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-md">
+                  SJ
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* 3-PANEL LAYOUT: Gmail Style */}
+      <div className="flex h-[calc(100vh-89px)]">
+        
+        {/* LEFT PANEL: Filters & Client List */}
+        <div className="w-80 bg-white border-r border-neutral-200 flex flex-col overflow-hidden">
+          {/* Search Bar */}
+          <div className="p-4 border-b border-neutral-200">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
+              <input
+                type="text"
+                placeholder="Search clients..."
+                className="w-full pl-10 pr-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          {/* Filter Tabs */}
+          <div className="flex gap-2 p-4 border-b border-neutral-200 bg-neutral-50">
+            {[
+              { value: 'all', label: 'All', count: clients.length },
+              { value: 'active', label: 'Active', count: clients.filter(c => c.status === 'active').length },
+              { value: 'pending', label: 'Pending', count: clients.filter(c => c.status === 'pending').length },
+            ].map(filter => (
+              <button
+                key={filter.value}
+                onClick={() => setFilterStatus(filter.value)}
+                className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  filterStatus === filter.value
+                    ? 'bg-primary-600 text-white shadow-sm'
+                    : 'bg-white text-neutral-700 hover:bg-neutral-100 border border-neutral-200'
+                }`}
+              >
+                {filter.label} ({filter.count})
+              </button>
+            ))}
+          </div>
+
+          {/* Client List */}
+          <div className="flex-1 overflow-y-auto">
+            {filteredClients.map(client => (
+              <button
+                key={client.id}
+                onClick={() => setSelectedClient(client.id)}
+                className={`w-full p-4 border-b border-neutral-200 text-left hover:bg-neutral-50 transition-colors ${
+                  selectedClient === client.id ? 'bg-primary-50 border-l-4 border-l-primary-600' : ''
+                }`}
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <div className="font-semibold text-neutral-900">{client.name}</div>
+                    <div className="text-xs text-neutral-500 mt-0.5">ID: {client.id}</div>
                   </div>
+                  {client.urgency === 'high' && (
+                    <span className="px-2 py-0.5 text-xs font-semibold bg-error-100 text-error-700 rounded">
+                      High
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-4 text-xs text-neutral-500">
+                  <div className="flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {client.lastContact}
+                  </div>
+                  {client.upcomingAppt !== 'None' && (
+                    <div className="flex items-center gap-1 text-primary-600">
+                      <CheckCircle2 className="w-3 h-3" />
+                      {client.upcomingAppt}
+                    </div>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
 
-                  <RecommendationsFeed
-                    recommendations={recommendations}
-                    onApprove={handleApproveRecommendation}
-                    onReject={handleRejectRecommendation}
-                    onModify={handleModifyRecommendation}
-                    isLoading={recommendationsLoading}
-                  />
+        {/* MIDDLE PANEL: Event Feed */}
+        <div className="flex-1 bg-neutral-50 overflow-y-auto">
+          <div className="p-6">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-neutral-900 mb-2">AI Recommendations</h2>
+              <p className="text-neutral-600">Real-time coordination opportunities</p>
+            </div>
+            <RecommendationsFeed />
+          </div>
+        </div>
+
+        {/* RIGHT PANEL: Details */}
+        <div className="w-96 bg-white border-l border-neutral-200 overflow-y-auto">
+          {selectedClient ? (
+            <div className="p-6">
+              <h3 className="text-lg font-bold text-neutral-900 mb-4">Client Details</h3>
+              {/* Client details would go here */}
+              <div className="space-y-4">
+                <div className="p-4 bg-neutral-50 rounded-lg">
+                  <div className="text-sm text-neutral-500 mb-1">Selected Client</div>
+                  <div className="font-semibold text-neutral-900">
+                    {clients.find(c => c.id === selectedClient)?.name}
+                  </div>
+                </div>
+                <div className="text-sm text-neutral-600">
+                  Full client profile, care plan, and history would display here in production.
                 </div>
               </div>
-            )}
-
-            {activeTab === 'cases' && (
-              <CaseManagement 
-                cases={cases}
-                isLoading={casesLoading}
-                user={user}
-                t={t}
-              />
-            )}
-            
-            {activeTab === 'clients' && (
-              <ClientList 
-                clients={clients}
-                isLoading={clientsLoading}
-                t={t}
-              />
-            )}
-            
-            {activeTab === 'ai' && (
-              <AIAssistant 
-                user={user}
-                language={language}
-                t={t}
-              />
-            )}
-            
-            {activeTab === 'compliance' && (
-              <ComplianceDashboard 
-                user={user}
-                t={t}
-              />
-            )}
-            
-            {activeTab === 'metrics' && (
-              <PerformanceMetrics 
-                metrics={metrics}
-                isLoading={metricsLoading}
-                user={user}
-                t={t}
-              />
-            )}
-            
-            {activeTab === 'settings' && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-semibold text-neutral-900 mb-4">
-                  {t('settings.title')}
-                </h2>
-                <p className="text-neutral-600">
-                  {t('settings.coming_soon')}
-                </p>
+            </div>
+          ) : (
+            <div className="h-full flex items-center justify-center p-6 text-center">
+              <div>
+                <Users className="w-16 h-16 text-neutral-300 mx-auto mb-4" />
+                <h3 className="font-semibold text-neutral-900 mb-2">No Client Selected</h3>
+                <p className="text-sm text-neutral-500">Select a client from the list to view details</p>
               </div>
-            )}
-          </motion.div>
-        </AnimatePresence>
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
-  );
+  )
 }
