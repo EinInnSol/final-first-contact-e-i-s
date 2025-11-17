@@ -1,6 +1,0 @@
-2025-11-14 16:22:55 [INFO] app.agents.mutual_support_agent:123: Mutual Support Agent initialized with threshold: 0.7
-2025-11-14 16:22:55 [INFO] main:43: Starting First Contact EIS Backend (Demo Mode)...
-2025-11-14 16:23:00 [ERROR] app.database:48: Failed to initialize database: Multiple exceptions: [Errno 10061] Connect call failed ('::1', 5432, 0, 0), [Errno 10061] Connect call failed ('127.0.0.1', 5432)
-2025-11-14 16:23:00 [WARNING] main:48: Database init skipped (expected in demo mode): Multiple exceptions: [Errno 10061] Connect call failed ('::1', 5432, 0, 0), [Errno 10061] Connect call failed ('127.0.0.1', 5432)
-2025-11-14 16:23:00 [INFO] main:51: Backend ready for demo
-2025-11-14 16:23:30 [INFO] uvicorn.access:473: 127.0.0.1:59946 - "GET /health HTTP/1.1" 200
